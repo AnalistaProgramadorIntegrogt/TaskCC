@@ -1,19 +1,13 @@
 <script setup>
+import { getColaboradorColor } from '~/utils/colors'
+
 defineProps({
-  dia: { type: Object, required: true }, // { fecha, dia, esHoy, checklistId, tareas }
+  dia: { type: Object, required: true }, // { fecha, dia, esHoy, checklists, tareas }
   puedeEditar: { type: Boolean, default: true },
-  tareasDisponibles: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['marcar-hecha', 'desmarcar', 'quitar-tarea', 'cargar-recurrentes', 'agregar-tarea'])
+const emit = defineEmits(['marcar-hecha', 'desmarcar', 'quitar-tarea', 'iniciar-marcado'])
 
-const tareaAAgregar = ref('')
-
-function alAgregarTarea() {
-  if (!tareaAAgregar.value) return
-  emit('agregar-tarea', Number(tareaAAgregar.value))
-  tareaAAgregar.value = ''
-}
 </script>
 
 <template>
@@ -26,30 +20,40 @@ function alAgregarTarea() {
       <p class="-mt-2 text-xs text-base-content/50">{{ dia.fecha }}</p>
 
       <p v-if="!dia.tareas?.length" class="text-sm text-base-content/50">
-        Sin tareas asignadas este día.
+        Sin tareas asignadas.
       </p>
 
-      <TareaItem
-        v-for="t in dia.tareas"
-        :key="t.id"
-        :tarea="t"
-        :puede-editar="puedeEditar"
-        @marcar-hecha="archivo => emit('marcar-hecha', t.id, archivo)"
-        @desmarcar="emit('desmarcar', t.id)"
-        @quitar="emit('quitar-tarea', t.id)"
-      />
-
-      <div v-if="puedeEditar" class="mt-2 space-y-2 border-t border-base-300 pt-2">
-        <button class="btn btn-outline btn-xs btn-block" @click="emit('cargar-recurrentes')">
-          + Cargar tareas recurrentes
-        </button>
-
-        <div v-if="tareasDisponibles.length" class="join w-full">
-          <select v-model="tareaAAgregar" class="join-item select select-bordered select-xs w-full">
-            <option value="">Agregar tarea existente…</option>
-            <option v-for="t in tareasDisponibles" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-          </select>
-          <button class="join-item btn btn-xs" @click="alAgregarTarea">Agregar</button>
+      <div class="space-y-2 mt-2">
+        <div 
+          v-for="t in dia.tareas" 
+          :key="t.id"
+          class="border rounded-lg p-2 flex gap-3 items-start border-l-4"
+          :style="`border-left-color: ${getColaboradorColor(t.colaboradorId)}; background-color: ${t.completada ? 'var(--fallback-b2,oklch(var(--b2)))' : 'var(--fallback-b1,oklch(var(--b1)))'}`"
+        >
+          <input
+            type="checkbox"
+            class="checkbox checkbox-primary mt-1 checkbox-sm"
+            :checked="t.completada"
+            :disabled="!puedeEditar"
+            @change="(e) => { e.target.checked ? emit('iniciar-marcado', t) : emit('desmarcar', t.id) }"
+          >
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-medium text-sm" :class="{ 'text-base-content/40 line-through': t.completada }">
+              {{ t.tarea?.nombre }}
+            </p>
+            <p class="text-[10px] text-base-content/60 font-semibold" :style="`color: ${getColaboradorColor(t.colaboradorId)}`">
+              {{ t.colaboradorNombre }}
+            </p>
+          </div>
+          
+          <button
+            v-if="puedeEditar"
+            class="btn btn-ghost btn-xs text-error px-1"
+            title="Quitar"
+            @click="emit('quitar-tarea', t.id)"
+          >
+            ✕
+          </button>
         </div>
       </div>
     </div>

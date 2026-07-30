@@ -1,39 +1,18 @@
 // composables/useChecklistData.js
 //
 // Toda la conexión a Supabase para la vista de Checklist vive aquí:
-// obtener/crear checklists por día, leer y modificar sus tareas,
-// cargar el grupo de tareas recurrentes por defecto, y subir la
-// evidencia fotográfica al marcar una tarea como hecha.
+// obtener checklists por proyecto y fecha, leer y modificar tareas.
 
 export function useChecklistData() {
   const supabase = useSupabaseClient()
 
-  async function obtenerOCrearChecklist(colaboradorId, fecha) {
-    const { data: existente, error: errBuscar } = await supabase
-      .from('checklists')
-      .select('id, fecha, dia')
-      .eq('colaborador_asignado_id', colaboradorId)
-      .eq('fecha', fecha)
-      .maybeSingle()
-
-    if (errBuscar) throw errBuscar
-    if (existente) return existente
-
-    const { data: creado, error: errCrear } = await supabase
-      .from('checklists')
-      .insert({ colaborador_asignado_id: colaboradorId, fecha })
-      .select('id, fecha, dia')
-      .single()
-
-    if (errCrear) throw errCrear
-    return creado
-  }
-
-  async function obtenerTareasDeChecklist(checklistId) {
+  async function obtenerTareasDeChecklists(checklistIds) {
+    if (!checklistIds.length) return []
     const { data, error } = await supabase
       .from('checklist_tareas')
       .select(`
         id,
+        checklist_id,
         completada,
         completada_at,
         observaciones,
@@ -42,30 +21,76 @@ export function useChecklistData() {
         colaborador_resuelve_id,
         tarea:tareas ( id, nombre, descripcion )
       `)
-      .eq('checklist_id', checklistId)
+      .in('checklist_id', checklistIds)
       .order('id', { ascending: true })
 
     if (error) throw error
     return data
   }
 
-  // Trae (o crea) el checklist de cada día de la semana y sus tareas.
-  async function cargarSemana(colaboradorId, diasSemana) {
-    const resultado = []
-    for (const dia of diasSemana) {
-      const checklist = await obtenerOCrearChecklist(colaboradorId, dia.fecha)
-      const tareas = await obtenerTareasDeChecklist(checklist.id)
-      resultado.push({ ...dia, checklistId: checklist.id, tareas })
-    }
+  // Trae todos los checklists de una semana para un proyecto específico
+  async function cargarSemanaProyecto(proyectoId, diasSemana) {
+    const fechas = diasSemana.map(d => d.fecha)
+    
+    // Obtener todos los checklists para esa semana en el proyecto
+    const { data: checklists, error: errChecklists } = await supabase
+      .from('checklists')
+      .select(`
+        id, 
+        fecha, 
+        dia, 
+        colaborador_asignado_id,
+        colaborador:colaboradores ( nombre )
+      `)
+      .eq('proyecto_id', proyectoId)
+      .in('fecha', fechas)
+      
+    if (errChecklists) throw errChecklists
+
+    const checklistIds = (checklists || []).map(c => c.id)
+    const todasLasTareas = await obtenerTareasDeChecklists(checklistIds)
+
+    // Agrupar tareas por checklist_id
+    const tareasPorChecklist = todasLasTareas.reduce((acc, tarea) => {
+      if (!acc[tarea.checklist_id]) acc[tarea.checklist_id] = []
+      acc[tarea.checklist_id].push(tarea)
+      return acc
+    }, {})
+
+    // Enriquecer el array de días con los checklists y tareas de ese día
+    const resultado = diasSemana.map(dia => {
+      const checklistsDelDia = (checklists || []).filter(c => c.fecha === dia.fecha)
+      
+      // Construir una lista combinada de tareas para este día
+      const tareasDelDia = []
+      checklistsDelDia.forEach(checklist => {
+        const tareas = tareasPorChecklist[checklist.id] || []
+        // Añadir metadata del colaborador a cada tarea para poder pintarla en la interfaz
+        const tareasConMetadata = tareas.map(t => ({
+          ...t,
+          colaboradorId: checklist.colaborador_asignado_id,
+          colaboradorNombre: checklist.colaborador?.nombre || 'Desconocido',
+          checklistId: checklist.id
+        }))
+        tareasDelDia.push(...tareasConMetadata)
+      })
+
+      return {
+        ...dia,
+        checklists: checklistsDelDia, // Puede ser útil tener la lista de checklists
+        tareas: tareasDelDia
+      }
+    })
+
     return resultado
   }
 
-  // Inserta en el checklist las tareas del grupo marcado como predeterminado,
-  // evitando duplicar las que ya estén presentes.
-  async function cargarGrupoPredeterminado(checklistId) {
+  // Inserta en un checklist las tareas del grupo marcado como predeterminado
+  async function cargarGrupoPredeterminado(proyectoId, checklistId) {
     const { data: grupo, error: errGrupo } = await supabase
       .from('grupos')
       .select('id')
+      .eq('proyecto_id', proyectoId)
       .eq('es_predeterminado', true)
       .eq('activo', true)
       .maybeSingle()
@@ -104,7 +129,7 @@ export function useChecklistData() {
     return insertadas
   }
 
-  // Agrega una tarea suelta (ya existente en el catálogo) al checklist del día.
+  // Agrega una tarea suelta
   async function agregarTareaSuelta(checklistId, tareaId) {
     const { data, error } = await supabase
       .from('checklist_tareas')
@@ -143,7 +168,7 @@ export function useChecklistData() {
       .update({
         completada: true,
         completada_at: new Date().toISOString(),
-        colaborador_resuelve_id: colaboradorId,
+        colaborador_resuelve_id: colaboradorId, // Quién la resolvió
         foto_path,
         foto_url,
       })
@@ -167,12 +192,70 @@ export function useChecklistData() {
     return data
   }
 
+  // Nueva utilidad: para cuando necesitamos asignar algo y no hay checklist aún
+  async function crearChecklist(proyectoId, colaboradorId, fecha) {
+    const { data, error } = await supabase
+      .from('checklists')
+      .insert({ proyecto_id: proyectoId, colaborador_asignado_id: colaboradorId, fecha })
+      .select('id, fecha, dia')
+      .single()
+    if (error) throw error
+    return data
+  }
+
+  // Trae todos los checklists de un rango de fechas para un proyecto (ej. mes completo)
+  async function cargarRangoProyecto(proyectoId, fechaInicio, fechaFin) {
+    const { data: checklists, error: errChecklists } = await supabase
+      .from('checklists')
+      .select(`
+        id, 
+        fecha, 
+        dia, 
+        colaborador_asignado_id,
+        colaborador:colaboradores ( nombre )
+      `)
+      .eq('proyecto_id', proyectoId)
+      .gte('fecha', fechaInicio)
+      .lte('fecha', fechaFin)
+      
+    if (errChecklists) throw errChecklists
+
+    const checklistIds = (checklists || []).map(c => c.id)
+    const todasLasTareas = await obtenerTareasDeChecklists(checklistIds)
+
+    // Agrupar tareas por checklist_id
+    const tareasPorChecklist = todasLasTareas.reduce((acc, tarea) => {
+      if (!acc[tarea.checklist_id]) acc[tarea.checklist_id] = []
+      acc[tarea.checklist_id].push(tarea)
+      return acc
+    }, {})
+
+    // Construir una lista plana de eventos enriquecida con la fecha y colaborador
+    const eventos = []
+    checklists.forEach(checklist => {
+      const tareas = tareasPorChecklist[checklist.id] || []
+      tareas.forEach(t => {
+        eventos.push({
+          ...t,
+          fecha: checklist.fecha, // Para que el calendario pueda agrupar por fecha
+          colaboradorId: checklist.colaborador_asignado_id,
+          colaboradorNombre: checklist.colaborador?.nombre || 'Desconocido',
+          checklistId: checklist.id
+        })
+      })
+    })
+
+    return eventos
+  }
+
   return {
-    cargarSemana,
+    cargarSemanaProyecto,
     cargarGrupoPredeterminado,
     agregarTareaSuelta,
     quitarTarea,
     marcarComoHecha,
     desmarcarTarea,
+    crearChecklist,
+    cargarRangoProyecto
   }
 }

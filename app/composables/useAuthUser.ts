@@ -4,10 +4,14 @@ export const useAuthUser = () => {
   
   const colaborador = useState('colaborador', () => null)
   const isCargando = useState('colaborador_cargando', () => false)
+  const authError = useState('colaborador_error', () => null as any)
 
   const fetchColaborador = async () => {
-    if (!user.value) {
+    authError.value = null
+    const userId = user.value?.id || user.value?.sub
+    if (!userId) {
       colaborador.value = null
+      authError.value = 'User is null or missing ID/SUB'
       return
     }
     
@@ -16,15 +20,19 @@ export const useAuthUser = () => {
       const { data, error } = await supabase
         .from('colaboradores')
         .select('*, roles(rol)')
-        .eq('auth_id', user.value.id)
+        .eq('auth_id', userId)
         .single()
         
       if (!error && data) {
         colaborador.value = data
       } else {
+        console.error('Error fetching colaborador:', error)
+        authError.value = error
         colaborador.value = null
       }
     } catch (e) {
+      console.error('Exception fetching colaborador:', e)
+      authError.value = e
       colaborador.value = null
     } finally {
       isCargando.value = false
@@ -40,6 +48,7 @@ export const useAuthUser = () => {
     user,
     colaborador,
     isCargando,
+    authError,
     fetchColaborador
   }
 }

@@ -1,11 +1,10 @@
 <script setup>
 defineProps({
   rangoTexto: { type: String, required: true },
-  colaboradores: { type: Array, default: () => [] },
-  colaboradorId: { type: [Number, String, null], default: null },
+  vistaActiva: { type: String, default: 'lista' } // 'lista' o 'calendario'
 })
 
-const emit = defineEmits(['anterior', 'siguiente', 'ir-a-mes', 'cambiar-colaborador'])
+const emit = defineEmits(['anterior', 'siguiente', 'ir-a-mes', 'cambiar-vista'])
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -44,15 +43,6 @@ function alElegirMes(valor) {
             {{ mes }}
           </option>
         </optgroup>
-      </select>
-
-      <select
-        class="select select-bordered select-sm"
-        :value="colaboradorId ?? ''"
-        @change="e => emit('cambiar-colaborador', e.target.value ? Number(e.target.value) : null)"
-      >
-        <option value="">Selecciona colaborador…</option>
-        <option v-for="c in colaboradores" :key="c.id" :value="c.id">{{ c.nombre }}</option>
       </select>
     </div>
   </div>

@@ -42,7 +42,7 @@
               </div>
               
               <div class="flex justify-between items-center mt-4">
-                <a class="link link-hover text-sm font-medium text-base-content/70">¿Olvidaste tu contraseña?</a>
+                <NuxtLink to="/recuperar-password" class="link link-hover text-sm font-medium text-base-content/70">¿Olvidaste tu contraseña?</NuxtLink>
                 <NuxtLink to="/register" class="link link-hover text-sm font-bold text-primary">Regístrate aquí</NuxtLink>
               </div>
               
@@ -93,7 +93,7 @@ const handleLogin = async () => {
   
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
-      errorMsg.value = 'Email o contraseña incorrectos.'
+      errorMsg.value = 'Usuario o contraseña incorrectos, por favor intenta de nuevo.'
     } else {
       errorMsg.value = 'Error al iniciar sesión: ' + error.message
     }

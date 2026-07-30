@@ -1,39 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Bricolage Grotesque", "Space Grotesk", "Ubuntu", sans-serif;
+  --font-sans: "Montserrat", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 }
 
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "lemonade";
-  default: false;
+  name: "integro";
+  default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98.71% 0.02 123.72);
-  --color-base-200: oklch(91.8% 0.018 123.72);
-  --color-base-300: oklch(84.89% 0.017 123.72);
-  --color-base-content: oklch(19.742% 0.004 123.72);
-  --color-primary: oklch(58.92% 0.199 134.6);
-  --color-primary-content: oklch(11.784% 0.039 134.6);
-  --color-secondary: #A9B9C5;
-  --color-secondary-content: oklch(15.55% 0.039 111.09);
-  --color-accent: oklch(85.39% 0.201 100.73);
-  --color-accent-content: oklch(17.078% 0.04 100.73);
-  --color-neutral: #627B69;
-  --color-neutral-content: oklch(86.196% 0.015 108.6);
-  --color-info: oklch(86.19% 0.047 224.14);
-  --color-info-content: oklch(17.238% 0.009 224.14);
-  --color-success: oklch(86.19% 0.047 157.85);
-  --color-success-content: oklch(17.238% 0.009 157.85);
-  --color-warning: oklch(86.19% 0.047 102.15);
-  --color-warning-content: oklch(17.238% 0.009 102.15);
-  --color-error: oklch(86.19% 0.047 25.85);
-  --color-error-content: oklch(17.238% 0.009 25.85);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
+  
+  /* Colores principales de Íntegro */
+  --color-base-100: #FFFFFF;
+  --color-base-200: #E1E2E4; /* Brand Light Gray */
+  --color-base-300: #89888A; /* Brand Gray */
+  --color-base-content: #000000; /* Brand Black */
+  
+  --color-primary: #C3302D; /* Brand Red */
+  --color-primary-content: #FFFFFF;
+  
+  --color-secondary: #89888A; /* Brand Gray as secondary */
+  --color-secondary-content: #000000;
+  
+  --color-accent: #000000; /* Brand Black as accent/highlight */
+  --color-accent-content: #FFFFFF;
+  
+  --color-neutral: #000000; 
+  --color-neutral-content: #FFFFFF;
+  
+  /* Semantic colors (manteniendo legibilidad) */
+  --color-info: #0ea5e9;
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-error: #C3302D; /* Usamos el Brand Red para error */
+  
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;

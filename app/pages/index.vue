@@ -6,6 +6,10 @@
 
 <script setup lang="ts">
 definePageMeta({
-  redirect: '/checklist'
+  middleware: [
+    function (to, from) {
+      return navigateTo('/admin/proyectos')
+    },
+  ],
 })
 </script>
