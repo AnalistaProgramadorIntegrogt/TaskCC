@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { CircleCheck, ExternalLink, PlusCircle, CheckCircle2 } from 'lucide-vue-next'
+import { CircleCheck, ExternalLink, PlusCircle, CheckCircle2, FolderKanban, Layers } from 'lucide-vue-next'
+import AdminGruposPredeterminados from '~/components/admin/AdminGruposPredeterminados.vue'
 
 const supabase = useSupabaseClient()
 const proyectos = ref([])
 const cargando = ref(false)
+const tabActiva = ref('proyectos') // 'proyectos' | 'grupos_default'
 
 const nuevoProyecto = ref({
   nombre: '',
@@ -76,20 +78,42 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="p-6 mx-auto max-w-7xl">
-    <!-- Header with "Crear" button and "Administra proyectos" title -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-      <div>
-        <button @click="abrirModal" class="btn btn-primary gap-2 shadow-md">
-          <PlusCircle :size="18" />
-          Crear nuevo proyecto
-        </button>
-      </div>
-      <div class="text-left md:text-right w-full md:w-auto">
-        <h1 class="text-2xl font-bold text-base-content">Administra proyectos:</h1>
-        <p class="text-sm text-base-content/60">Gestiona y revisa el progreso de tus espacios de trabajo.</p>
-      </div>
+  <div class="p-6 mx-auto max-w-7xl space-y-6">
+    <!-- Navegación por Pestañas -->
+    <div class="flex border-b border-base-300 gap-2">
+      <button 
+        class="btn btn-ghost rounded-b-none border-b-2 gap-2 text-sm font-bold" 
+        :class="tabActiva === 'proyectos' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-base-content/60'"
+        @click="tabActiva = 'proyectos'"
+      >
+        <FolderKanban :size="18" />
+        Gestión de Proyectos
+      </button>
+      <button 
+        class="btn btn-ghost rounded-b-none border-b-2 gap-2 text-sm font-bold" 
+        :class="tabActiva === 'grupos_default' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-base-content/60'"
+        @click="tabActiva = 'grupos_default'"
+      >
+        <Layers :size="18" />
+        Grupos Por Defecto Globales
+      </button>
     </div>
+
+    <!-- Pestaña 1: Gestión de Proyectos -->
+    <div v-if="tabActiva === 'proyectos'" class="space-y-6">
+      <!-- Header con botón Crear -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <button @click="abrirModal" class="btn btn-primary gap-2 shadow-md">
+            <PlusCircle :size="18" />
+            Crear nuevo proyecto
+          </button>
+        </div>
+        <div class="text-left md:text-right w-full md:w-auto">
+          <h1 class="text-2xl font-bold text-base-content">Administra proyectos:</h1>
+          <p class="text-sm text-base-content/60">Gestiona y revisa el progreso de tus espacios de trabajo.</p>
+        </div>
+      </div>
     
     <!-- Lista de proyectos (Grid) -->
     <div class="space-y-4">
@@ -211,5 +235,11 @@ definePageMeta({
         <button @click="cerrarModal">close</button>
       </form>
     </dialog>
+    </div>
+
+    <!-- Pestaña 2: Grupos Por Defecto Globales -->
+    <div v-if="tabActiva === 'grupos_default'">
+      <AdminGruposPredeterminados />
+    </div>
   </div>
 </template>

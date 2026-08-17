@@ -99,7 +99,7 @@ const matrizData = computed(() => {
                     >
                     <div class="min-w-0 flex-1">
                       <p class="text-xs font-medium leading-tight" :class="{ 'line-through text-base-content/60': t.completada }">
-                        {{ t.tarea?.nombre }}
+                        {{ t.tarea?.nombre || t.tarea_nombre_snapshot || 'Tarea' }}
                       </p>
                     </div>
                     <button

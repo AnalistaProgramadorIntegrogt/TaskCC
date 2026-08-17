@@ -12,7 +12,7 @@
     <!-- Título/Logo -->
     <div class="flex-1">
       <a class="btn btn-ghost normal-case p-0 px-2 h-auto" href="/">
-        <img src="/img/logos/LosAltosLogo.png" alt="Los Altos Logo" class="h-10 object-contain brightness-0 invert" />
+        <img src="/img/logos/BLANCO 500px.png" alt="Los Altos Logo" class="h-10 object-contain brightness-0 invert" />
       </a>
     </div>
     
