@@ -20,14 +20,19 @@
     <div class="flex-none gap-2">
       <div class="dropdown dropdown-end">
         <label tabindex="0" class="btn btn-ghost btn-circle avatar">
-          <div class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center">
-            <span class="text-lg">U</span>
+          <div class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center font-black">
+            <span>{{ userInicial }}</span>
           </div>
         </label>
-        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 text-base-content rounded-box w-52 border border-base-200">
-          <li><a>Perfil</a></li>
-          <li><a>Configuración</a></li>
-          <li><a class="text-error" @click="handleLogout">Cerrar Sesión</a></li>
+        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 text-base-content rounded-box w-56 border border-base-200">
+          <li class="menu-title px-4 py-2 border-b border-base-200">
+            <span class="font-extrabold text-sm text-base-content">{{ colaborador?.nombre || 'Usuario' }}</span>
+            <span class="text-[11px] text-base-content/60 lowercase">{{ user?.email }}</span>
+          </li>
+          <li class="mt-1"><NuxtLink to="/">Mi Calendario</NuxtLink></li>
+          <li v-if="esAdmin"><NuxtLink to="/admin">Panel de Administración</NuxtLink></li>
+          <div class="divider my-1"></div>
+          <li><a class="text-error font-bold" @click="handleLogout">Cerrar Sesión</a></li>
         </ul>
       </div>
     </div>
@@ -35,8 +40,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAuthUser } from '~/composables/useAuthUser'
+
 const supabase = useSupabaseClient()
 const router = useRouter()
+const { colaborador, user } = useAuthUser()
+
+const userInicial = computed(() => {
+  if (colaborador.value?.nombre) {
+    return colaborador.value.nombre.charAt(0).toUpperCase()
+  }
+  if (user.value?.email) {
+    return user.value.email.charAt(0).toUpperCase()
+  }
+  return 'U'
+})
+
+const esAdmin = computed(() => {
+  if (!colaborador.value) return false
+  const rol = colaborador.value.roles?.rol
+  if (rol === 'ADMIN') return true
+  if (Array.isArray(colaborador.value.roles) && colaborador.value.roles.some((r: any) => r.rol === 'ADMIN')) return true
+  return colaborador.value.rol_id === 1 || colaborador.value.rol_id === 2
+})
 
 const handleLogout = async () => {
   await supabase.auth.signOut()

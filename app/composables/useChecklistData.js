@@ -473,6 +473,122 @@ export function useChecklistData() {
     return resultadoPorFecha
   }
 
+  // Trae todos los checklists y tareas de una semana para un colaborador específico
+  async function cargarSemanaColaborador(colaboradorId, diasSemana, proyectoId = null) {
+    if (!colaboradorId || !diasSemana?.length) return []
+    const fechas = diasSemana.map(d => d.fecha)
+
+    let query = supabase
+      .from('checklists')
+      .select(`
+        id, 
+        fecha, 
+        dia, 
+        proyecto_id,
+        proyecto_checklist_id,
+        colaborador_asignado_id,
+        proyecto:proyectos ( id, nombre )
+      `)
+      .eq('colaborador_asignado_id', colaboradorId)
+      .in('fecha', fechas)
+
+    if (proyectoId && proyectoId !== 'todos') {
+      query = query.eq('proyecto_id', Number(proyectoId))
+    }
+
+    const { data: checklists, error: errChecklists } = await query
+    if (errChecklists) throw errChecklists
+
+    const checklistIds = (checklists || []).map(c => c.id)
+    const todasLasTareas = await obtenerTareasDeChecklists(checklistIds)
+
+    const tareasPorChecklist = todasLasTareas.reduce((acc, tarea) => {
+      if (!acc[tarea.checklist_id]) acc[tarea.checklist_id] = []
+      acc[tarea.checklist_id].push(tarea)
+      return acc
+    }, {})
+
+    const resultado = diasSemana.map(dia => {
+      const checklistsDelDia = (checklists || []).filter(c => c.fecha === dia.fecha)
+      const tareasDelDia = []
+
+      checklistsDelDia.forEach(checklist => {
+        const tareas = tareasPorChecklist[checklist.id] || []
+        const tareasConMetadata = tareas.map(t => ({
+          ...t,
+          fecha: checklist.fecha,
+          dia: checklist.dia,
+          checklistId: checklist.id,
+          proyectoId: checklist.proyecto_id,
+          proyectoNombre: checklist.proyecto?.nombre || 'General'
+        }))
+        tareasDelDia.push(...tareasConMetadata)
+      })
+
+      return {
+        ...dia,
+        checklists: checklistsDelDia,
+        tareas: tareasDelDia
+      }
+    })
+
+    return resultado
+  }
+
+  // Trae todas las tareas de un rango de fechas para un colaborador específico (calendario mensual)
+  async function cargarRangoColaborador(colaboradorId, fechaInicio, fechaFin, proyectoId = null) {
+    if (!colaboradorId) return []
+
+    let query = supabase
+      .from('checklists')
+      .select(`
+        id, 
+        fecha, 
+        dia, 
+        proyecto_id,
+        proyecto_checklist_id,
+        colaborador_asignado_id,
+        proyecto:proyectos ( id, nombre )
+      `)
+      .eq('colaborador_asignado_id', colaboradorId)
+      .gte('fecha', fechaInicio)
+      .lte('fecha', fechaFin)
+
+    if (proyectoId && proyectoId !== 'todos') {
+      query = query.eq('proyecto_id', Number(proyectoId))
+    }
+
+    const { data: checklists, error: errChecklists } = await query
+    if (errChecklists) throw errChecklists
+
+    const checklistIds = (checklists || []).map(c => c.id)
+    const todasLasTareas = await obtenerTareasDeChecklists(checklistIds)
+
+    const tareasPorChecklist = todasLasTareas.reduce((acc, tarea) => {
+      if (!acc[tarea.checklist_id]) acc[tarea.checklist_id] = []
+      acc[tarea.checklist_id].push(tarea)
+      return acc
+    }, {})
+
+    const eventos = []
+    const listaChecklists = checklists || []
+    for (const checklist of listaChecklists) {
+      const tareas = tareasPorChecklist[checklist.id] || []
+      for (const t of tareas) {
+        eventos.push({
+          ...t,
+          fecha: checklist.fecha,
+          dia: checklist.dia,
+          checklistId: checklist.id,
+          proyectoId: checklist.proyecto_id,
+          proyectoNombre: checklist.proyecto?.nombre || 'General'
+        })
+      }
+    }
+
+    return eventos
+  }
+
   return {
     obtenerChecklistsProyecto,
     crearProyectoChecklist,
@@ -486,6 +602,8 @@ export function useChecklistData() {
     crearChecklist,
     cargarRangoProyecto,
     asignarTareasSemanal,
-    obtenerAsignacionesSemanaColaborador
+    obtenerAsignacionesSemanaColaborador,
+    cargarSemanaColaborador,
+    cargarRangoColaborador
   }
 }
