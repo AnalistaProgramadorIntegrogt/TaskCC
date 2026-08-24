@@ -239,18 +239,24 @@ export function useChecklistData() {
     return { foto_path: ruta, foto_url: data.publicUrl }
   }
 
-  async function marcarComoHecha(checklistTareaId, archivo, colaboradorId) {
+  async function marcarComoHecha(checklistTareaId, archivo, colaboradorId, observaciones = null) {
     const { foto_path, foto_url } = await subirFotoEvidencia(archivo, checklistTareaId)
+
+    const updatePayload = {
+      completada: true,
+      completada_at: new Date().toISOString(),
+      colaborador_resuelve_id: colaboradorId,
+      foto_path,
+      foto_url,
+    }
+
+    if (observaciones !== undefined && observaciones !== null && typeof observaciones === 'string' && observaciones.trim() !== '') {
+      updatePayload.observaciones = observaciones.trim()
+    }
 
     const { data, error } = await supabase
       .from('checklist_tareas')
-      .update({
-        completada: true,
-        completada_at: new Date().toISOString(),
-        colaborador_resuelve_id: colaboradorId,
-        foto_path,
-        foto_url,
-      })
+      .update(updatePayload)
       .eq('id', checklistTareaId)
       .select()
       .single()

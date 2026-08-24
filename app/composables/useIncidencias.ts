@@ -1,7 +1,7 @@
 // composables/useIncidencias.ts
 //
 // Gestión de incidencias: creación, subida de evidencia fotográfica
-// y consulta filtrada por colaborador y rango de fechas.
+// y consulta filtrada por colaborador y rango de fechas con detección segura de existencia de tabla.
 
 export interface Incidencia {
   id: number
@@ -22,6 +22,9 @@ export interface Incidencia {
     nombre: string
   } | null
 }
+
+// Bandera en memoria para no saturar con 404 si la tabla aún no se ha creado en Supabase
+let incidenciasTableMissing = false
 
 export function useIncidencias() {
   const supabase = useSupabaseClient()
@@ -75,9 +78,8 @@ export function useIncidencias() {
     }
 
     const ahora = new Date()
-    // Formato local UTC-6 / YYYY-MM-DD
     const fechaFinal = fecha || ahora.toISOString().split('T')[0]
-    const horaFinal = hora || ahora.toTimeString().split(' ')[0].substring(0, 5) // HH:MM
+    const horaFinal = hora || ahora.toTimeString().split(' ')[0].substring(0, 5)
 
     const { data, error } = await supabase
       .from('incidencias')
@@ -101,11 +103,14 @@ export function useIncidencias() {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST205') {
-        throw new Error("La tabla 'incidencias' no existe aún en Supabase. Debes ejecutar el archivo sql/010_incidencias.sql en tu Editor SQL de Supabase.")
+      if (error.code === 'PGRST205' || error.message?.includes('404')) {
+        incidenciasTableMissing = true
+        throw new Error("La tabla 'incidencias' no existe aún en Supabase. Debes ejecutar el archivo sql/010_incidencias.sql en el Editor SQL de Supabase.")
       }
       throw error
     }
+
+    incidenciasTableMissing = false
     return data as Incidencia
   }
 
@@ -117,7 +122,7 @@ export function useIncidencias() {
     fechaInicio: string,
     fechaFin: string
   ): Promise<Incidencia[]> {
-    if (!colaboradorId) return []
+    if (!colaboradorId || incidenciasTableMissing) return []
 
     try {
       const { data, error } = await supabase
@@ -132,8 +137,8 @@ export function useIncidencias() {
         .order('fecha_hora', { ascending: true })
 
       if (error) {
-        if (error.code === 'PGRST205') {
-          // La tabla aún no existe en Supabase (falta ejecutar 010_incidencias.sql)
+        if (error.code === 'PGRST205' || error.code === '42P01' || error.message?.includes('404')) {
+          incidenciasTableMissing = true
           return []
         }
         console.warn('Aviso al cargar incidencias por rango:', error.message)
@@ -153,7 +158,7 @@ export function useIncidencias() {
     colaboradorId: number,
     fechasSemana: string[]
   ): Promise<Incidencia[]> {
-    if (!colaboradorId || !fechasSemana.length) return []
+    if (!colaboradorId || !fechasSemana.length || incidenciasTableMissing) return []
 
     try {
       const { data, error } = await supabase
@@ -167,8 +172,8 @@ export function useIncidencias() {
         .order('fecha_hora', { ascending: true })
 
       if (error) {
-        if (error.code === 'PGRST205') {
-          // La tabla aún no existe en Supabase (falta ejecutar 010_incidencias.sql)
+        if (error.code === 'PGRST205' || error.code === '42P01' || error.message?.includes('404')) {
+          incidenciasTableMissing = true
           return []
         }
         console.warn('Aviso al cargar incidencias por semana:', error.message)

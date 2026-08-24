@@ -402,9 +402,11 @@ const DEFAULT_VISTAS = [
   { id: 1, nombre: 'Inicio / Dashboard', ruta: '/', categoria: 'General', descripcion: 'Vista principal con accesos y estado' },
   { id: 2, nombre: 'Checklists Diarios', ruta: '/checklists', categoria: 'Operaciones', descripcion: 'Formulario y seguimiento de checklists diarios' },
   { id: 3, nombre: 'Proyectos', ruta: '/proyectos', categoria: 'Operaciones', descripcion: 'Listado e información detallada de proyectos' },
-  { id: 4, nombre: 'Gestión de Usuarios', ruta: '/admin/usuarios', categoria: 'Administración', descripcion: 'Administración de colaboradores y permisos' },
-  { id: 5, nombre: 'Gestión de Proyectos', ruta: '/admin/proyectos', categoria: 'Administración', descripcion: 'Configuración de proyectos y tareas' },
-  { id: 6, nombre: 'Gestión de Roles', ruta: '/admin/roles', categoria: 'Administración', descripcion: 'Creación de roles y asignación de vistas' },
+  { id: 4, nombre: 'Auditoría de Tareas', ruta: '/admin/auditoria', categoria: 'Operaciones', descripcion: 'Auditoría, revisión y calificación de tareas completadas' },
+  { id: 5, nombre: 'Reportería y Métricas', ruta: '/admin/reportes', categoria: 'Operaciones', descripcion: 'Seguimiento, asignaciones y cumplimiento de checklists' },
+  { id: 6, nombre: 'Gestión de Usuarios', ruta: '/admin/usuarios', categoria: 'Administración', descripcion: 'Administración de colaboradores y permisos' },
+  { id: 7, nombre: 'Gestión de Proyectos', ruta: '/admin/proyectos', categoria: 'Administración', descripcion: 'Configuración de proyectos y tareas' },
+  { id: 8, nombre: 'Gestión de Roles', ruta: '/admin/roles', categoria: 'Administración', descripcion: 'Creación de roles y asignación de vistas' },
 ]
 
 onMounted(async () => {

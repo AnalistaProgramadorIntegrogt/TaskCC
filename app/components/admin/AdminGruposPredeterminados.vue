@@ -14,7 +14,19 @@
         </p>
       </div>
 
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="btn btn-outline btn-success btn-sm gap-1.5 shadow-2xs" @click="descargarPlantilla">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Descargar Plantilla
+        </button>
+        <button class="btn btn-outline btn-primary btn-sm gap-1.5 shadow-2xs" @click="isCargaMasivaOpen = true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          Carga Masiva Excel
+        </button>
         <button class="btn btn-outline btn-sm gap-2" @click="openNuevaTareaModal">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -89,26 +101,6 @@
               {{ grupo.descripcion || 'Sin descripción.' }}
             </p>
 
-            <!-- Recurrencia Info -->
-            <div class="bg-base-200/60 rounded-xl p-3 mb-4 flex flex-wrap gap-3 text-xs">
-              <div>
-                <span class="font-semibold text-base-content/60">Recurrencia:</span>
-                <span class="ml-1 font-bold text-primary capitalize">{{ grupo.recurrencia_tipo || 'No configurada' }}</span>
-              </div>
-              <div v-if="grupo.recurrencia_tipo === 'diario'">
-                <span class="font-semibold text-base-content/60">Día asignado:</span>
-                <span class="ml-1 font-bold text-secondary">{{ getDiaSemanaNombre(grupo.dia_semana) }}</span>
-              </div>
-              <div v-else-if="grupo.recurrencia_tipo === 'semanal'">
-                <span class="font-semibold text-base-content/60">Frecuencia:</span>
-                <span class="ml-1 font-bold">Todos los días de la semana</span>
-              </div>
-              <div v-else-if="grupo.recurrencia_tipo === 'mensual'">
-                <span class="font-semibold text-base-content/60">Frecuencia:</span>
-                <span class="ml-1 font-bold">Todos los días del mes</span>
-              </div>
-            </div>
-
             <!-- Tareas del grupo -->
             <div>
               <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 flex items-center justify-between">
@@ -149,43 +141,6 @@
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">Descripción</span></label>
             <textarea v-model="grupoForm.descripcion" placeholder="Describa el objetivo de este grupo por defecto..." class="textarea textarea-bordered w-full h-20 resize-none focus:textarea-primary"></textarea>
-          </div>
-
-          <!-- Recurrencia -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-base-200/50 p-4 rounded-xl border border-base-200">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold">Tipo de Recurrencia</span></label>
-              <select v-model="grupoForm.recurrencia_tipo" class="select select-bordered w-full">
-                <option value="diario">Diario (Día específico de la semana)</option>
-                <option value="semanal">Semanal (Todos los días de la semana)</option>
-                <option value="mensual">Mensual (Todos los días del mes)</option>
-              </select>
-            </div>
-
-            <div v-if="grupoForm.recurrencia_tipo === 'diario'" class="form-control">
-              <label class="label"><span class="label-text font-bold">Día Específico de la Semana</span></label>
-              <select v-model="grupoForm.dia_semana" class="select select-bordered w-full">
-                <option :value="1">Lunes</option>
-                <option :value="2">Martes</option>
-                <option :value="3">Miércoles</option>
-                <option :value="4">Jueves</option>
-                <option :value="5">Viernes</option>
-                <option :value="6">Sábado</option>
-                <option :value="7">Domingo</option>
-              </select>
-            </div>
-
-            <div v-else-if="grupoForm.recurrencia_tipo === 'semanal'" class="form-control justify-center">
-              <span class="text-xs text-base-content/70 italic">
-                Las tareas de este grupo se repetirán de Lunes a Domingo.
-              </span>
-            </div>
-
-            <div v-else-if="grupoForm.recurrencia_tipo === 'mensual'" class="form-control justify-center">
-              <span class="text-xs text-base-content/70 italic">
-                Las tareas de este grupo se repetirán del día 1 al 31 de cada mes.
-              </span>
-            </div>
           </div>
 
           <!-- Selección de Tareas Maestras -->
@@ -238,11 +193,24 @@
       </div>
       <form method="dialog" class="modal-backdrop" @click="isTareaModalOpen = false"><button>close</button></form>
     </dialog>
+
+    <!-- Modal Carga Masiva Excel -->
+    <ModalCargaMasivaTareas
+      :is-open="isCargaMasivaOpen"
+      :grupos-disponibles="gruposDefault"
+      @cerrar="isCargaMasivaOpen = false"
+      @descargar-plantilla="descargarPlantilla"
+      @importacion-completada="onImportacionCompletada"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import ModalCargaMasivaTareas from '~/components/admin/ModalCargaMasivaTareas.vue'
+import { useExcelTareas } from '~/composables/useExcelTareas'
+
 const supabase = useSupabaseClient()
+const { descargarPlantillaExcel } = useExcelTareas()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -255,15 +223,15 @@ const gruposDefault = ref<any[]>([])
 const catalogTareas = ref<any[]>([])
 const tareasRecurrentes = ref<any[]>([])
 
+// Modal Carga Masiva State
+const isCargaMasivaOpen = ref(false)
+
 // Modal Grupo State
 const isGrupoModalOpen = ref(false)
 const editingGrupoId = ref<number | null>(null)
 const grupoForm = ref({
   nombre: '',
   descripcion: '',
-  recurrencia_tipo: 'semanal' as string | null,
-  dia_semana: 1,
-  dia_mes: 1,
   selectedTareas: [] as number[]
 })
 
@@ -328,11 +296,6 @@ const getTareasDelGrupo = (grupoId: number) => {
   return catalogTareas.value.filter(t => tareaIds.includes(t.id))
 }
 
-const getDiaSemanaNombre = (dia: number) => {
-  const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-  return dias[dia] || 'N/A'
-}
-
 const openGrupoModal = (grupo?: any) => {
   if (grupo) {
     editingGrupoId.value = grupo.id
@@ -343,9 +306,6 @@ const openGrupoModal = (grupo?: any) => {
     grupoForm.value = {
       nombre: grupo.nombre,
       descripcion: grupo.descripcion || '',
-      recurrencia_tipo: grupo.recurrencia_tipo || null,
-      dia_semana: grupo.dia_semana || 1,
-      dia_mes: grupo.dia_mes || 1,
       selectedTareas: assignedTareaIds
     }
   } else {
@@ -353,9 +313,6 @@ const openGrupoModal = (grupo?: any) => {
     grupoForm.value = {
       nombre: '',
       descripcion: '',
-      recurrencia_tipo: 'diario',
-      dia_semana: 1,
-      dia_mes: 1,
       selectedTareas: []
     }
   }
@@ -376,10 +333,7 @@ const guardarGrupo = async () => {
       nombre: grupoForm.value.nombre.trim(),
       descripcion: grupoForm.value.descripcion.trim(),
       es_predeterminado: true,
-      proyecto_id: null,
-      recurrencia_tipo: grupoForm.value.recurrencia_tipo,
-      dia_semana: grupoForm.value.recurrencia_tipo === 'diario' ? grupoForm.value.dia_semana : null,
-      dia_mes: null
+      proyecto_id: null
     }
 
     let gId = editingGrupoId.value
@@ -420,11 +374,21 @@ const guardarGrupo = async () => {
 const eliminarGrupo = async (grupoId: number) => {
   if (!confirm('¿Estás seguro de eliminar este grupo por defecto?')) return
   try {
+    // 1. Desasociar checklist_tareas (mantiene el grupo_nombre_snapshot histórico)
+    await supabase.from('checklist_tareas').update({ grupo_id: null }).eq('grupo_id', grupoId)
+    
+    // 2. Eliminar relaciones de tareas recurrentes y colaboradores del grupo
+    await supabase.from('tareas_recurrentes').delete().eq('grupo_id', grupoId)
+    await supabase.from('grupo_colaboradores').delete().eq('grupo_id', grupoId)
+
+    // 3. Eliminar el grupo
     const { error } = await supabase.from('grupos').delete().eq('id', grupoId)
     if (error) throw error
+
     showToast('Grupo por defecto eliminado')
     await fetchData()
   } catch (err: any) {
+    console.error('Error al eliminar grupo por defecto:', err)
     showToast(err.message || 'Error al eliminar el grupo', 'error')
   }
 }
@@ -453,5 +417,23 @@ const guardarTareaMaestra = async () => {
   } finally {
     savingTarea.value = false
   }
+}
+
+// Carga Masiva y Descarga de Plantilla Excel
+const descargarPlantilla = () => {
+  descargarPlantillaExcel(catalogTareas.value, 'plantilla_tareas_globales.xlsx')
+  showToast('Plantilla Excel descargada correctamente')
+}
+
+const onImportacionCompletada = async (res: { creadas: number; actualizadas: number; asociadasAlGrupo: number }) => {
+  let mensaje = `Carga masiva completada: ${res.creadas} tarea(s) nueva(s) creadas`
+  if (res.actualizadas > 0) {
+    mensaje += `, ${res.actualizadas} actualizada(s)`
+  }
+  if (res.asociadasAlGrupo > 0) {
+    mensaje += ` y ${res.asociadasAlGrupo} asociada(s) al grupo`
+  }
+  showToast(mensaje)
+  await fetchData()
 }
 </script>

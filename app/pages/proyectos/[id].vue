@@ -1,7 +1,9 @@
 <script setup>
 import ProyectoGestionTareas from '~/components/proyecto/ProyectoGestionTareas.vue'
 import ProyectoAsignacionTareas from '~/components/proyecto/ProyectoAsignacionTareas.vue'
+import ProyectoMontajes from '~/components/proyecto/ProyectoMontajes.vue'
 import ChecklistFotoModal from '~/components/checklist/FotoModal.vue'
+import { Wrench } from 'lucide-vue-next'
 
 const route = useRoute()
 const proyectoId = Number(route.params.id)
@@ -235,12 +237,12 @@ function iniciarMarcado(tarea) {
   mostrarModalFoto.value = true
 }
 
-async function confirmarFoto(archivo) {
+async function confirmarFoto(archivo, observaciones = '') {
   mostrarModalFoto.value = false
   if (!tareaActivaParaFoto.value) return
   
   const tareaId = tareaActivaParaFoto.value.id
-  const actualizada = await marcarComoHecha(tareaId, archivo, null) 
+  const actualizada = await marcarComoHecha(tareaId, archivo, null, observaciones) 
   actualizarTareaEnSemana(tareaId, actualizada)
   tareaActivaParaFoto.value = null
 }
@@ -422,6 +424,15 @@ onMounted(async () => {
           </svg>
           Tareas & Grupos
         </button>
+
+        <button 
+          class="btn btn-sm border-none gap-2 font-bold"
+          :class="tabPrincipal === 'montajes' ? 'bg-base-100 shadow-sm text-primary' : 'bg-transparent text-base-content/70 hover:bg-base-300'"
+          @click="tabPrincipal = 'montajes'"
+        >
+          <Wrench :size="15" />
+          <span>Registro de montajes</span>
+        </button>
       </div>
     </div>
 
@@ -568,6 +579,13 @@ onMounted(async () => {
 
     <!-- Pestaña 3: Tareas y Grupos del Proyecto -->
     <ProyectoGestionTareas v-else-if="tabPrincipal === 'tareas_grupos'" :proyecto-id="proyectoId" />
+
+    <!-- Pestaña 4: Registro de Montajes del Proyecto -->
+    <ProyectoMontajes 
+      v-else-if="tabPrincipal === 'montajes'" 
+      :proyecto-id="proyectoId" 
+      :colaboradores="colaboradores" 
+    />
 
     <!-- MODAL: CREAR NUEVO CHECKLIST PARA EL PROYECTO -->
     <dialog id="modal_crear_nuevo_checklist" class="modal modal-bottom sm:modal-middle" :class="{'modal-open': modalNuevoChecklistOpen}">

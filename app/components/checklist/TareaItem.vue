@@ -16,9 +16,9 @@ function alCambiarCheckbox(e) {
   }
 }
 
-function alConfirmarFoto(archivo) {
+function alConfirmarFoto(archivo, observaciones = '') {
   mostrarModal.value = false
-  emit('marcar-hecha', archivo)
+  emit('marcar-hecha', archivo, observaciones)
 }
 </script>
 

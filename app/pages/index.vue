@@ -123,14 +123,8 @@
       </div>
     </div>
 
-    <!-- Indicador de Carga -->
-    <div v-if="cargando" class="flex flex-col items-center justify-center py-16 space-y-3 bg-base-100 rounded-3xl border border-base-200">
-      <span class="loading loading-spinner loading-lg text-primary"></span>
-      <p class="text-xs font-bold text-base-content/60">Cargando tus tareas e incidencias...</p>
-    </div>
-
-    <!-- Vistas Dinámicas -->
-    <div v-else>
+    <!-- Vistas Dinámicas (Mantienen el estado sin desmontarse para evitar loops de renderizado) -->
+    <div>
       <!-- Vista Lista Semanal -->
       <UsuarioVistaLista
         v-if="vistaActiva === 'lista'"
@@ -342,7 +336,6 @@ function irSemanaAnterior() {
 }
 
 function irSemanaHoy() {
-  // Recargar fecha actual
   refrescarSemana()
 }
 
@@ -352,12 +345,12 @@ function iniciarMarcado(tarea: any) {
   modalFotoAbierto.value = true
 }
 
-async function confirmarFotoEvidencia(archivo: File) {
+async function confirmarFotoEvidencia(archivo: File, observaciones: string = '') {
   if (!tareaActivaParaFoto.value || !colaborador.value?.id) return
   modalFotoAbierto.value = false
 
   try {
-    await marcarComoHecha(tareaActivaParaFoto.value.id, archivo, colaborador.value.id)
+    await marcarComoHecha(tareaActivaParaFoto.value.id, archivo, colaborador.value.id, observaciones)
     mostrarToast('Tarea completada exitosamente con evidencia fotográfica.')
     
     if (vistaActiva.value === 'lista') {
@@ -450,13 +443,6 @@ const textoMesActual = computed(() => {
   return m.charAt(0).toUpperCase() + m.slice(1)
 })
 
-// Vigilantes
-watch(colaborador, (nuevoColab) => {
-  if (nuevoColab?.id) {
-    refrescarSemana()
-  }
-})
-
 watch(proyectoSeleccionadoId, () => {
   if (vistaActiva.value === 'lista') {
     refrescarSemana()
@@ -466,10 +452,8 @@ watch(proyectoSeleccionadoId, () => {
 })
 
 onMounted(async () => {
+  await fetchColaborador()
   await cargarProyectos()
-  if (!colaborador.value) {
-    await fetchColaborador()
-  }
   await refrescarSemana()
 })
 </script>

@@ -2,6 +2,48 @@
 
 @theme {
   --font-sans: "Montserrat", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-brand: "Montserrat", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
+:root {
+  /* =========================================================================
+     PALETA OFICIAL ÍNTEGRO (SKILL.md)
+     ========================================================================= */
+  --integro-black: #000000;
+  --integro-gray: #89888a;
+  --integro-light-gray: #e1e2e4;
+  --integro-red: #c3302d;
+  --integro-white: #ffffff;
+
+  /* Neutro derivado accesible sobre fondo blanco (4.71:1) */
+  --integro-gray-text: #747376;
+
+  /* Superficies semánticas */
+  --surface: var(--integro-white);
+  --surface-inverse: var(--integro-black);
+  --surface-muted: var(--integro-light-gray);
+  --surface-secondary: var(--integro-gray);
+
+  /* Texto semántico */
+  --text-primary: var(--integro-black);
+  --text-inverse: var(--integro-white);
+  --text-muted: var(--integro-gray-text);
+
+  /* Interacción */
+  --accent: var(--integro-red);
+  --accent-hover: #ad2a28;
+  --accent-active: #982523;
+  --focus: var(--integro-red);
+
+  /* Bordes */
+  --border-strong: var(--integro-black);
+  --border-default: #b8b8ba;
+  --border-soft: var(--integro-light-gray);
+
+  /* Tipografía */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }
 
 @plugin "daisyui";
@@ -11,31 +53,38 @@
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  
+
   /* Colores principales de Íntegro */
   --color-base-100: #FFFFFF;
-  --color-base-200: #E1E2E4; /* Brand Light Gray */
-  --color-base-300: #89888A; /* Brand Gray */
-  --color-base-content: #000000; /* Brand Black */
-  
-  --color-primary: #C3302D; /* Brand Red */
+  --color-base-200: #F3F4F6;
+  /* Fondo suave para interfaces operativas */
+  --color-base-300: #E1E2E4;
+  /* Brand Light Gray para bordes/separadores */
+  --color-base-content: #000000;
+  /* Brand Black */
+
+  --color-primary: #C3302D;
+  /* Brand Red */
   --color-primary-content: #FFFFFF;
-  
-  --color-secondary: #89888A; /* Brand Gray as secondary */
-  --color-secondary-content: #000000;
-  
-  --color-accent: #000000; /* Brand Black as accent/highlight */
+
+  --color-secondary: #89888A;
+  /* Brand Gray */
+  --color-secondary-content: #FFFFFF;
+
+  --color-accent: #000000;
+  /* Brand Black */
   --color-accent-content: #FFFFFF;
-  
-  --color-neutral: #000000; 
+
+  --color-neutral: #000000;
   --color-neutral-content: #FFFFFF;
-  
-  /* Semantic colors (manteniendo legibilidad) */
-  --color-info: #0ea5e9;
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-error: #C3302D; /* Usamos el Brand Red para error */
-  
+
+  /* Semantic colors */
+  --color-info: #0284c7;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #C3302D;
+  /* Brand Red */
+
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
   --radius-box: 0.25rem;
@@ -44,4 +93,17 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+}
+
+/* Punto Rojo Terminal Íntegro (Signature Brand Period) */
+.brand-period {
+  color: #C3302D;
+  font-weight: 900;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  -webkit-font-smoothing: antialiased;
 }

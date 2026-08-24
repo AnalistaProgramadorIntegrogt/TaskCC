@@ -124,7 +124,12 @@ const fechaSeleccionadaStr = computed(() => {
 <template>
   <div class="space-y-6">
     <!-- Contenedor Principal del Calendario -->
-    <div class="flex flex-1 flex-col bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden">
+    <div class="flex flex-1 flex-col bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden relative">
+      <!-- Barra de Carga Sutil -->
+      <div v-if="cargando" class="h-1 w-full bg-primary/20 overflow-hidden absolute top-0 left-0 right-0 z-10">
+        <div class="h-full bg-primary animate-pulse w-full"></div>
+      </div>
+
       <!-- Calendar Header -->
       <div class="flex flex-col space-y-4 p-5 md:flex-row md:items-center md:justify-between md:space-y-0 lg:flex-none border-b border-base-200 bg-base-100">
         <div class="flex items-center gap-4">
