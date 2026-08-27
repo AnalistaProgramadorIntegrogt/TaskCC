@@ -33,7 +33,7 @@ jobs:
           NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NUXT_PUBLIC_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          npm ci
+          npm install
           npm run generate
 
       - name: Build And Deploy
