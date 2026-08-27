@@ -1,9 +1,10 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { fetchColaborador, colaborador } = useAuthUser()
+  const { fetchColaborador, colaborador, esAdmin } = useAuthUser()
   const user = useSupabaseUser()
 
   if (!user.value) {
-    return navigateTo('/login')
+    const redirectQuery = to.fullPath ? `?redirect=${encodeURIComponent(to.fullPath)}` : ''
+    return navigateTo(`/login${redirectQuery}`)
   }
 
   // Esperar a tener la información del colaborador si no está cargada
@@ -11,14 +12,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     await fetchColaborador()
   }
 
-  // Verificar que el usuario tenga rol de ADMIN
-  // El ID 1 es ADMIN y 2 es USER por defecto.
-  const isUserAdmin = 
-    colaborador.value?.roles?.rol === 'ADMIN' || 
-    (Array.isArray(colaborador.value?.roles) && colaborador.value.roles.some((r: any) => r.rol === 'ADMIN')) ||
-    colaborador.value?.rol_id === 2; // (Actualmente configurado como 2 para pruebas del usuario)
-
-  if (!isUserAdmin) {
+  if (!esAdmin.value) {
     return navigateTo('/')
   }
 })
+

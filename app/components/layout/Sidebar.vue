@@ -80,16 +80,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useAuthUser } from '~/composables/useAuthUser'
 
-const { colaborador } = useAuthUser()
-
-const esAdmin = computed(() => {
-  if (!colaborador.value) return false
-  const rol = colaborador.value.roles?.rol
-  if (rol === 'ADMIN') return true
-  if (Array.isArray(colaborador.value.roles) && colaborador.value.roles.some((r: any) => r.rol === 'ADMIN')) return true
-  return colaborador.value.rol_id === 1 || colaborador.value.rol_id === 2
-})
+const { colaborador, esAdmin } = useAuthUser()
 </script>
+

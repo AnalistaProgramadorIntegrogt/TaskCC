@@ -45,7 +45,7 @@ import { useAuthUser } from '~/composables/useAuthUser'
 
 const supabase = useSupabaseClient()
 const router = useRouter()
-const { colaborador, user } = useAuthUser()
+const { colaborador, user, esAdmin } = useAuthUser()
 
 const userInicial = computed(() => {
   if (colaborador.value?.nombre) {
@@ -57,16 +57,11 @@ const userInicial = computed(() => {
   return 'U'
 })
 
-const esAdmin = computed(() => {
-  if (!colaborador.value) return false
-  const rol = colaborador.value.roles?.rol
-  if (rol === 'ADMIN') return true
-  if (Array.isArray(colaborador.value.roles) && colaborador.value.roles.some((r: any) => r.rol === 'ADMIN')) return true
-  return colaborador.value.rol_id === 1 || colaborador.value.rol_id === 2
-})
-
 const handleLogout = async () => {
   await supabase.auth.signOut()
+  user.value = null
+  colaborador.value = null
   router.push('/login')
 }
 </script>
+
