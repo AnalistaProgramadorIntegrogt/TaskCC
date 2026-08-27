@@ -26,7 +26,8 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies and build        env:
+      - name: Install dependencies and build        
+        env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
