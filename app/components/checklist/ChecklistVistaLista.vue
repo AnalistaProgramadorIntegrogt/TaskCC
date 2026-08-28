@@ -58,7 +58,7 @@ const matrizData = computed(() => {
         <thead>
           <tr class="bg-base-200">
             <th class="w-48 bg-base-200 z-20 sticky left-0 shadow-[2px_0_4px_rgba(0,0,0,0.05)] border-r border-base-300">
-              Colaborador
+              Responsable Asignado
             </th>
             <th v-for="dia in semana" :key="dia.fecha" class="min-w-[200px] text-center border-b border-base-300">
               <div class="font-semibold">{{ dia.dia }}</div>
@@ -67,10 +67,10 @@ const matrizData = computed(() => {
           </tr>
         </thead>
         
-        <!-- Filas por Colaborador -->
+        <!-- Filas por Colaborador Responsable -->
         <tbody>
           <tr v-for="colab in matrizData" :key="colab.id" class="border-b border-base-200 hover:bg-base-50/50 transition-colors">
-            <!-- Celda Fija del Colaborador -->
+            <!-- Celda Fija del Colaborador Responsable -->
             <th class="bg-base-100 sticky left-0 shadow-[2px_0_4px_rgba(0,0,0,0.05)] border-r border-base-300 align-top py-4">
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full flex-shrink-0" :style="{ backgroundColor: colab.color }"></span>
@@ -81,13 +81,13 @@ const matrizData = computed(() => {
             <!-- Celdas de Tareas por Día -->
             <td v-for="dia in semana" :key="dia.fecha" class="align-top p-2 border-r border-base-100 last:border-r-0 border-dashed">
               <div class="space-y-2">
-                <!-- Tareas de este colaborador en este día -->
+                <!-- Tareas de este responsable en este día -->
                 <div v-if="colab.dias[dia.fecha]?.length">
                   <div 
                     v-for="t in colab.dias[dia.fecha]" 
                     :key="t.id" 
                     class="border border-base-200 rounded-md p-2 flex gap-2 items-start transition-all"
-                    :class="t.completada ? 'opacity-60 bg-base-200' : 'bg-base-100 shadow-sm'"
+                    :class="t.completada ? 'opacity-70 bg-base-200/60' : 'bg-base-100 shadow-sm'"
                     :style="!t.completada ? `border-left-width: 3px; border-left-color: ${colab.color}` : ''"
                   >
                     <input
@@ -100,6 +100,11 @@ const matrizData = computed(() => {
                     <div class="min-w-0 flex-1">
                       <p class="text-xs font-medium leading-tight" :class="{ 'line-through text-base-content/60': t.completada }">
                         {{ t.tarea?.nombre || t.tarea_nombre_snapshot || 'Tarea' }}
+                      </p>
+                      
+                      <!-- Detalle de quién resolvió la tarea -->
+                      <p v-if="t.completada && t.colaboradorResuelveNombre" class="text-[9px] font-bold text-success mt-1">
+                        ✓ Resuelta por: {{ t.colaboradorResuelveNombre }}
                       </p>
                     </div>
                     <button

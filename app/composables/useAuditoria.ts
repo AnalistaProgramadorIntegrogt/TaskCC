@@ -108,6 +108,7 @@ export function useAuditoria() {
           grupo_nombre_snapshot,
           completada,
           completada_at,
+          colaborador_responsable_id,
           colaborador_resuelve_id,
           foto_url,
           foto_path,
@@ -119,6 +120,7 @@ export function useAuditoria() {
           auditado_at,
           tarea:tareas ( id, nombre, descripcion ),
           grupo:grupos ( id, nombre ),
+          colaborador_responsable:colaboradores!colaborador_responsable_id ( id, nombre ),
           colaborador_resuelve:colaboradores!colaborador_resuelve_id ( id, nombre ),
           auditor:colaboradores!auditado_por_id ( id, nombre )
         `)
@@ -141,11 +143,11 @@ export function useAuditoria() {
       }
 
       // 3. Mapear datos a la interfaz estandarizada
-      const lista: TareaAuditada[] = (tareasData || []).map(t => {
+      let lista: TareaAuditada[] = (tareasData || []).map(t => {
         const chk = checklistsMap.get(t.checklist_id) || {}
         const nombreTarea = t.tarea_nombre_snapshot || t.tarea?.nombre || 'Tarea sin nombre'
         const nombreGrupo = t.grupo_nombre_snapshot || t.grupo?.nombre || 'Tarea individual'
-        const nombreColabAsignado = chk.colaborador_asignado?.nombre || 'Desconocido'
+        const nombreColabAsignado = t.colaborador_responsable?.nombre || chk.colaborador_asignado?.nombre || 'Sin asignar'
         const nombreColabResuelve = t.colaborador_resuelve?.nombre || nombreColabAsignado
         const nombreAuditor = t.auditor?.nombre || null
 
@@ -164,7 +166,7 @@ export function useAuditoria() {
           grupo_nombre: nombreGrupo,
           completada: t.completada,
           completada_at: t.completada_at,
-          colaborador_asignado_id: chk.colaborador_asignado_id,
+          colaborador_asignado_id: t.colaborador_responsable_id || chk.colaborador_asignado_id,
           colaborador_asignado_nombre: nombreColabAsignado,
           colaborador_resuelve_id: t.colaborador_resuelve_id,
           colaborador_resuelve_nombre: nombreColabResuelve,
@@ -179,6 +181,12 @@ export function useAuditoria() {
           auditado_at: t.auditado_at
         }
       })
+
+      // Si se filtró por colaborador
+      if (filtros.colaboradorId && filtros.colaboradorId !== 'todos') {
+        const cId = Number(filtros.colaboradorId)
+        lista = lista.filter(item => item.colaborador_asignado_id === cId || item.colaborador_resuelve_id === cId)
+      }
 
       // Filtro de búsqueda por texto en memoria si se especifica
       if (filtros.busqueda && filtros.busqueda.trim() !== '') {

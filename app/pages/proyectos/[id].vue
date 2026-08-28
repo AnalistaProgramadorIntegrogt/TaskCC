@@ -10,6 +10,7 @@ const proyectoId = Number(route.params.id)
 
 const { dias, rangoTexto, semanaSiguiente, semanaAnterior, irAMes } = useSemanaUTC6()
 const { puede } = usePermisos()
+const { colaborador } = useAuthUser()
 const {
   obtenerChecklistsProyecto,
   crearProyectoChecklist,
@@ -159,7 +160,7 @@ const semanaFiltrada = computed(() => {
   const idNum = Number(colaboradorSeleccionadoId.value)
   return semana.value.map(dia => ({
     ...dia,
-    tareas: (dia.tareas || []).filter(t => t.colaboradorId === idNum)
+    tareas: (dia.tareas || []).filter(t => t.colaboradorResponsableId === idNum || t.colaboradorId === idNum)
   }))
 })
 
@@ -168,7 +169,7 @@ const eventosMesFiltrados = computed(() => {
     return eventosMes.value
   }
   const idNum = Number(colaboradorSeleccionadoId.value)
-  return eventosMes.value.filter(e => e.colaboradorId === idNum)
+  return eventosMes.value.filter(e => e.colaboradorResponsableId === idNum || e.colaboradorId === idNum)
 })
 
 const tieneTareasEnSemana = computed(() => {
@@ -242,7 +243,8 @@ async function confirmarFoto(archivo, observaciones = '') {
   if (!tareaActivaParaFoto.value) return
   
   const tareaId = tareaActivaParaFoto.value.id
-  const actualizada = await marcarComoHecha(tareaId, archivo, null, observaciones) 
+  const userId = colaborador.value?.id || null
+  const actualizada = await marcarComoHecha(tareaId, archivo, userId, observaciones) 
   actualizarTareaEnSemana(tareaId, actualizada)
   tareaActivaParaFoto.value = null
 }

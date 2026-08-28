@@ -445,6 +445,20 @@ const fechaSeleccionadaStr = computed(() => {
                 <p v-if="tarea.tarea?.descripcion" class="text-xs text-base-content/60 mt-1 line-clamp-2">
                   {{ tarea.tarea.descripcion }}
                 </p>
+
+                <!-- Badge de Responsable / Resuelve -->
+                <div class="flex flex-wrap items-center gap-1.5 mt-2 text-[10px]">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-base-200 text-base-content/70 font-semibold">
+                    👤 Resp: {{ tarea.colaboradorResponsableNombre || 'Sin asignar' }}
+                  </span>
+                  <span 
+                    v-if="tarea.completada && tarea.colaboradorResuelveNombre"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold"
+                    :class="tarea.colaboradorResuelveId !== tarea.colaboradorResponsableId ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'bg-success/15 text-success'"
+                  >
+                    ✓ Hecha por: {{ tarea.colaboradorResuelveNombre }}
+                  </span>
+                </div>
               </div>
 
               <!-- Foto de evidencia si está hecha -->

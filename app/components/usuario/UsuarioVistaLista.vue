@@ -345,15 +345,16 @@
                 >
                   <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                      <div class="flex items-center gap-1.5 mb-1">
+                      <div class="flex flex-wrap items-center gap-1.5 mb-1">
                         <span 
                           class="badge badge-xs text-[9px] font-black"
                           :class="tarea.completada ? 'badge-success text-white' : 'badge-ghost text-base-content/70'"
                         >
                           {{ tarea.completada ? '✓ Hecha' : 'Pendiente' }}
                         </span>
+
                         <span v-if="tarea.grupo_nombre_snapshot" class="text-[10px] font-bold text-primary truncate max-w-[120px]">
-                          {{ tarea.grupo_nombre_snapshot }}
+                          📁 {{ tarea.grupo_nombre_snapshot }}
                         </span>
                       </div>
 
@@ -363,10 +364,24 @@
                       >
                         {{ tarea.tarea?.nombre || tarea.tarea_nombre_snapshot || 'Tarea' }}
                       </h4>
+
+                      <!-- Badge de Responsable / Resuelve -->
+                      <div class="flex flex-wrap items-center gap-1 mt-1.5 text-[10px]">
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-base-200 text-base-content/70 font-semibold">
+                          👤 Resp: {{ tarea.colaboradorResponsableNombre || 'Sin asignar' }}
+                        </span>
+                        <span 
+                          v-if="tarea.completada && tarea.colaboradorResuelveNombre"
+                          class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold"
+                          :class="tarea.colaboradorResuelveId !== tarea.colaboradorResponsableId ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'bg-success/15 text-success'"
+                        >
+                          ✓ Hecha por: {{ tarea.colaboradorResuelveNombre }}
+                        </span>
+                      </div>
                     </div>
 
                     <!-- Mini foto indicador si está completada -->
-                    <div v-if="tarea.completada && tarea.foto_url" class="w-7 h-7 rounded-lg overflow-hidden border border-success/40 flex-shrink-0">
+                    <div v-if="tarea.completada && tarea.foto_url" class="w-8 h-8 rounded-lg overflow-hidden border border-success/40 flex-shrink-0">
                       <img :src="tarea.foto_url" alt="Foto" class="w-full h-full object-cover" />
                     </div>
                   </div>
@@ -407,6 +422,75 @@
                   </h3>
                 </div>
 
+                <!-- SECCIÓN NUEVA: Asignación y Quién la Completó -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- Tarjeta Responsable Asignado -->
+                  <div class="p-3.5 rounded-2xl bg-base-200/50 border border-base-200 space-y-1.5">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-base-content/50 block">
+                      👤 Responsable Asignado
+                    </span>
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-black text-xs">
+                        {{ getInitials(tareaSeleccionada.colaboradorResponsableNombre || 'U') }}
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div class="font-bold text-xs text-base-content truncate">
+                          {{ tareaSeleccionada.colaboradorResponsableNombre || 'Sin asignar' }}
+                        </div>
+                        <div class="text-[10px] text-base-content/60">
+                          Encargado programado
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tarjeta Completado Por -->
+                  <div 
+                    class="p-3.5 rounded-2xl border space-y-1.5 transition-all"
+                    :class="tareaSeleccionada.completada 
+                      ? (tareaSeleccionada.colaboradorResuelveId !== tareaSeleccionada.colaboradorResponsableId 
+                          ? 'bg-amber-500/10 border-amber-500/30' 
+                          : 'bg-success/10 border-success/30') 
+                      : 'bg-base-200/30 border-dashed border-base-300'"
+                  >
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider block" :class="tareaSeleccionada.completada ? 'text-base-content/70' : 'text-base-content/40'">
+                      🛠️ Resuelto Por
+                    </span>
+
+                    <div v-if="tareaSeleccionada.completada" class="flex items-center gap-2.5">
+                      <div 
+                        class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs text-white"
+                        :class="tareaSeleccionada.colaboradorResuelveId !== tareaSeleccionada.colaboradorResponsableId ? 'bg-amber-600' : 'bg-success'"
+                      >
+                        {{ getInitials(tareaSeleccionada.colaboradorResuelveNombre || 'U') }}
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div class="font-bold text-xs text-base-content truncate">
+                          {{ tareaSeleccionada.colaboradorResuelveNombre || 'Usuario' }}
+                        </div>
+                        <div class="text-[10px] text-base-content/60" v-if="tareaSeleccionada.completada_at">
+                          {{ formatearFechaHora(tareaSeleccionada.completada_at) }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-else class="text-xs text-base-content/50 italic py-1">
+                      Aún no se ha completado
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Aviso si fue resuelta por otro compañero -->
+                <div 
+                  v-if="tareaSeleccionada.completada && tareaSeleccionada.colaboradorResuelveNombre && tareaSeleccionada.colaboradorResuelveId !== tareaSeleccionada.colaboradorResponsableId"
+                  class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2"
+                >
+                  <AlertTriangle :size="15" class="flex-shrink-0 text-amber-600" />
+                  <span>
+                    <strong>Resolución colaborativa:</strong> Esta tarea estaba asignada a <em>{{ tareaSeleccionada.colaboradorResponsableNombre }}</em> y fue completada por <em>{{ tareaSeleccionada.colaboradorResuelveNombre }}</em>.
+                  </span>
+                </div>
+
                 <!-- Descripción Completa -->
                 <div class="space-y-2">
                   <label class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50 block">
@@ -414,6 +498,16 @@
                   </label>
                   <div class="p-4 rounded-2xl bg-base-200/50 border border-base-200 text-xs sm:text-sm text-base-content/80 leading-relaxed">
                     {{ tareaSeleccionada.tarea?.descripcion || 'No se proporcionó una descripción detallada para esta tarea.' }}
+                  </div>
+                </div>
+
+                <!-- Observaciones (si fueron ingresadas) -->
+                <div v-if="tareaSeleccionada.observaciones" class="space-y-2">
+                  <label class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50 block">
+                    Observaciones registradas
+                  </label>
+                  <div class="p-3 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs text-base-content/80 leading-relaxed">
+                    {{ tareaSeleccionada.observaciones }}
                   </div>
                 </div>
 
@@ -454,7 +548,7 @@
                       Esta tarea aún no cuenta con evidencia fotográfica.
                     </p>
                     <p class="text-[11px] text-base-content/50">
-                      Al marcarla como completada, se abrirá la cámara para capturar la fotografía de evidencia.
+                      Cualquier colaborador del proyecto puede pulsar el botón inferior para capturar la fotografía y marcarla como completada.
                     </p>
                   </div>
                 </div>
@@ -487,7 +581,7 @@
 
                   <div v-else class="badge badge-success text-white font-bold p-3 gap-1.5">
                     <CheckCircle2 :size="16" />
-                    <span>Tarea Completada</span>
+                    <span>Completada</span>
                   </div>
                 </div>
 
@@ -611,6 +705,23 @@ const porcentajeSemana = computed(() => {
   if (totalTareasSemana.value === 0) return 0
   return Math.round((tareasCompletadasSemana.value / totalTareasSemana.value) * 100)
 })
+
+const getInitials = (str: string) => {
+  if (!str) return 'U'
+  return str.substring(0, 2).toUpperCase()
+}
+
+const formatearFechaHora = (isoStr: string) => {
+  if (!isoStr) return ''
+  try {
+    const d = new Date(isoStr)
+    const fecha = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    return `${fecha} · ${hora} hrs`
+  } catch (e) {
+    return isoStr
+  }
+}
 
 // Mantener la tarea seleccionada sincronizada si cambia el checklist/tareas
 watch(() => props.semana, (nuevaSemana) => {

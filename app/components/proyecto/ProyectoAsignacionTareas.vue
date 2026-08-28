@@ -61,17 +61,17 @@
         <!-- Columna Izquierda: Selección de Empleado, Checklist Destino y Días (5 columnas) -->
         <div class="lg:col-span-5 space-y-6">
           
-          <!-- Tarjeta 1: Selección de Colaborador y Checklist Destino -->
+          <!-- Tarjeta 1: Selección de Responsable y Checklist Destino -->
           <div class="bg-base-100 p-5 rounded-2xl shadow-sm border border-base-200 space-y-4">
             <div class="flex items-center justify-between border-b border-base-200 pb-3">
               <h3 class="text-sm font-bold uppercase tracking-wider text-base-content/80 flex items-center gap-2">
                 <span class="badge badge-primary badge-sm font-bold">1</span>
-                Colaborador & Checklist
+                Responsable & Checklist
               </h3>
               
               <!-- Modo Asignación Múltiple Toggle -->
               <label class="label cursor-pointer gap-2 p-0">
-                <span class="label-text text-xs text-base-content/60">Asignar a varios</span>
+                <span class="label-text text-xs text-base-content/60">Varios responsables</span>
                 <input type="checkbox" v-model="modoVariosColaboradores" class="toggle toggle-primary toggle-xs" />
               </label>
             </div>
@@ -89,17 +89,17 @@
               </select>
             </div>
 
-            <!-- Modo 1: Solo un colaborador -->
+            <!-- Modo 1: Solo un responsable -->
             <div v-if="!modoVariosColaboradores" class="space-y-2">
-              <label class="text-xs font-semibold text-base-content/70">Selecciona el empleado:</label>
+              <label class="text-xs font-semibold text-base-content/70">Selecciona el responsable:</label>
               <select v-model="colaboradorId" class="select select-bordered select-sm w-full font-medium">
-                <option :value="null" disabled>-- Selecciona un colaborador --</option>
+                <option :value="null" disabled>-- Selecciona un responsable --</option>
                 <option v-for="c in colaboradores" :key="c.id" :value="c.id">
                   👤 {{ c.nombre }} {{ c.email ? `(${c.email})` : '' }}
                 </option>
               </select>
 
-              <!-- Tarjeta preview del colaborador seleccionado -->
+              <!-- Tarjeta preview del colaborador responsable seleccionado -->
               <div v-if="colaboradorActual" class="p-3 bg-base-200/50 rounded-xl border border-base-200 flex items-center justify-between mt-2">
                 <div class="flex items-center gap-3">
                   <div 
@@ -110,19 +110,19 @@
                   </div>
                   <div>
                     <div class="font-bold text-xs text-base-content">{{ colaboradorActual.nombre }}</div>
-                    <div class="text-[10px] text-base-content/60">{{ colaboradorActual.roles?.rol || 'Colaborador' }}</div>
+                    <div class="text-[10px] text-base-content/60">{{ colaboradorActual.roles?.rol || 'Colaborador' }} (Responsable)</div>
                   </div>
                 </div>
                 <div class="badge badge-sm badge-outline">
-                  {{ totalTareasAsignadasColaborador }} tareas esta semana
+                  {{ totalTareasAsignadasColaborador }} tareas como responsable
                 </div>
               </div>
             </div>
 
-            <!-- Modo 2: Múltiples colaboradores -->
+            <!-- Modo 2: Múltiples responsables -->
             <div v-else class="space-y-2">
               <div class="flex justify-between items-center text-xs">
-                <span class="font-semibold text-base-content/70">Selecciona los empleados:</span>
+                <span class="font-semibold text-base-content/70">Selecciona los responsables:</span>
                 <div class="space-x-1">
                   <button class="btn btn-ghost btn-xs text-[10px]" @click="seleccionarTodosColaboradores">Todos</button>
                   <button class="btn btn-ghost btn-xs text-[10px]" @click="deseleccionarTodosColaboradores">Ninguno</button>
@@ -145,9 +145,13 @@
               </div>
 
               <div class="text-[11px] text-primary font-bold">
-                {{ colaboradoresSeleccionadosIds.length }} colaborador(es) seleccionado(s)
+                {{ colaboradoresSeleccionadosIds.length }} responsable(s) seleccionado(s)
               </div>
             </div>
+            
+            <p class="text-[11px] text-base-content/50 italic">
+              ℹ️ Cada tarea tendrá su responsable asignado, pero cualquier colaborador del proyecto podrá verla y completarla.
+            </p>
           </div>
 
           <!-- Tarjeta 2: Selección de Días de la Semana -->
@@ -869,7 +873,7 @@ const resumenAsignacionTexto = computed(() => {
   }
 
   return {
-    titulo: `Asignando a ${colabsCount} empleado(s) en ${diasCount} día(s)`,
+    titulo: `Asignando como responsable a ${colabsCount} empleado(s) en ${diasCount} día(s)`,
     detalle: detalleModo || 'Selecciona las tareas a asignar'
   }
 })
@@ -928,7 +932,7 @@ const ejecutarAsignacion = async () => {
       items
     })
 
-    showToast(`¡Se asignaron exitosamente ${insertadas} tareas para la semana!`, 'success')
+    showToast(`¡Se asignaron exitosamente ${insertadas} tareas con su responsable asignado!`, 'success')
 
     await cargarAsignacionesSemana()
     emit('asignacion-completada')

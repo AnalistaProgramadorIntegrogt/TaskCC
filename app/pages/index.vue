@@ -49,8 +49,8 @@
       </div>
     </div>
 
-    <!-- Barra de Navegación de Fechas y Resumen (Semanal en Vista Lista) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-100 p-4 rounded-3xl border border-base-200 shadow-xs">
+    <!-- Barra de Navegación de Fechas, Filtro de Proyectos y Responsable -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-base-100 p-4 rounded-3xl border border-base-200 shadow-xs">
       <div class="flex items-center gap-3">
         <div class="p-2.5 bg-primary/10 text-primary rounded-2xl">
           <CalendarDays :size="20" />
@@ -65,30 +65,62 @@
         </div>
       </div>
 
-      <!-- Controles de Navegación Semanal (cuando está en Vista Lista) -->
-      <div v-if="vistaActiva === 'lista'" class="flex items-center gap-2">
+      <!-- Filtros Rápidos (Proyecto & Mis Tareas vs Todas) -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Selector de Proyecto -->
+        <div v-if="proyectos.length > 1" class="flex items-center gap-1.5 bg-base-200/60 px-3 py-1.5 rounded-2xl border border-base-300">
+          <span class="text-[11px] font-bold text-base-content/60">Proyecto:</span>
+          <select v-model="proyectoSeleccionadoId" class="select select-ghost select-xs font-bold focus:outline-none max-w-[160px]">
+            <option value="todos">🏢 Todos mis proyectos</option>
+            <option v-for="p in proyectos" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+          </select>
+        </div>
+
+        <!-- Filtro: Mis tareas vs Todas las tareas -->
         <div class="join bg-base-200 p-1 rounded-2xl border border-base-300 shadow-xs">
           <button 
-            class="join-item btn btn-ghost btn-xs btn-square rounded-xl"
-            @click="irSemanaAnterior"
-            title="Semana anterior"
+            type="button"
+            class="join-item btn btn-xs font-extrabold text-[11px] rounded-xl transition-all"
+            :class="filtroResponsable === 'todas' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+            @click="cambiarFiltroResponsable('todas')"
           >
-            <ChevronLeft :size="15" :stroke-width="2.5" />
+            🏢 Todas del proyecto
           </button>
           <button 
-            class="join-item btn btn-ghost btn-xs px-3 font-extrabold text-xs rounded-xl"
-            @click="irSemanaHoy"
-            title="Semana actual"
+            type="button"
+            class="join-item btn btn-xs font-extrabold text-[11px] rounded-xl transition-all"
+            :class="filtroResponsable === 'mis_tareas' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+            @click="cambiarFiltroResponsable('mis_tareas')"
           >
-            Esta Semana
+            👤 Mis tareas asignadas
           </button>
-          <button 
-            class="join-item btn btn-ghost btn-xs btn-square rounded-xl"
-            @click="irSemanaSiguiente"
-            title="Semana siguiente"
-          >
-            <ChevronRight :size="15" :stroke-width="2.5" />
-          </button>
+        </div>
+
+        <!-- Controles de Navegación Semanal (cuando está en Vista Lista) -->
+        <div v-if="vistaActiva === 'lista'" class="flex items-center gap-1">
+          <div class="join bg-base-200 p-1 rounded-2xl border border-base-300 shadow-xs">
+            <button 
+              class="join-item btn btn-ghost btn-xs btn-square rounded-xl"
+              @click="irSemanaAnterior"
+              title="Semana anterior"
+            >
+              <ChevronLeft :size="15" :stroke-width="2.5" />
+            </button>
+            <button 
+              class="join-item btn btn-ghost btn-xs px-3 font-extrabold text-xs rounded-xl"
+              @click="irSemanaHoy"
+              title="Semana actual"
+            >
+              Esta Semana
+            </button>
+            <button 
+              class="join-item btn btn-ghost btn-xs btn-square rounded-xl"
+              @click="irSemanaSiguiente"
+              title="Semana siguiente"
+            >
+              <ChevronRight :size="15" :stroke-width="2.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -231,6 +263,7 @@ const vistaActiva = ref<'lista' | 'calendario'>('lista')
 const cargando = ref(false)
 const proyectos = ref<any[]>([])
 const proyectoSeleccionadoId = ref<string | number>('todos')
+const filtroResponsable = ref<'todas' | 'mis_tareas'>('todas')
 
 // Datos de Tareas e Incidencias
 const semana = ref<any[]>([])
@@ -259,6 +292,15 @@ function mostrarToast(mensaje: string, tipo: 'success' | 'error' = 'success') {
   }, 4000)
 }
 
+function cambiarFiltroResponsable(nuevoFiltro: 'todas' | 'mis_tareas') {
+  filtroResponsable.value = nuevoFiltro
+  if (vistaActiva.value === 'lista') {
+    refrescarSemana()
+  } else if (rangoMesActivo.value.inicio && rangoMesActivo.value.fin) {
+    refrescarMes(rangoMesActivo.value.inicio, rangoMesActivo.value.fin)
+  }
+}
+
 // Cargar catálogo de proyectos
 async function cargarProyectos() {
   const { data } = await supabase
@@ -275,10 +317,12 @@ async function refrescarSemana() {
   cargando.value = true
   try {
     const colabId = colaborador.value.id
+    const soloMisTareas = filtroResponsable.value === 'mis_tareas'
     const tareasPorDia = await cargarSemanaColaborador(
       colabId,
       dias.value,
-      proyectoSeleccionadoId.value
+      proyectoSeleccionadoId.value,
+      soloMisTareas
     )
     semana.value = tareasPorDia
 
@@ -298,11 +342,13 @@ async function refrescarMes(inicio: string, fin: string) {
   cargando.value = true
   try {
     const colabId = colaborador.value.id
+    const soloMisTareas = filtroResponsable.value === 'mis_tareas'
     eventosMes.value = await cargarRangoColaborador(
       colabId,
       inicio,
       fin,
-      proyectoSeleccionadoId.value
+      proyectoSeleccionadoId.value,
+      soloMisTareas
     )
     incidenciasMes.value = await obtenerIncidenciasUsuarioRango(colabId, inicio, fin)
   } catch (err) {

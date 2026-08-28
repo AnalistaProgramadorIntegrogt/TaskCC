@@ -286,6 +286,7 @@ export function useReportes() {
             observaciones,
             foto_url,
             foto_path,
+            colaborador_responsable_id,
             colaborador_resuelve_id,
             tarea_nombre_snapshot,
             grupo_nombre_snapshot
@@ -309,7 +310,7 @@ export function useReportes() {
       // 5. Normalizar tareas reales
       const listaMapeada: TareaReporteItem[] = todasTareasData.map((t: any) => {
         const c = mapaChecklists.get(Number(t.checklist_id)) || {}
-        const colabAsignadoId = Number(c.colaborador_asignado_id || 0)
+        const colabAsignadoId = Number(t.colaborador_responsable_id || c.colaborador_asignado_id || 0)
         const colabResuelveId = Number(t.colaborador_resuelve_id || 0)
         const colabAsignadoObj = mapaColabs.get(colabAsignadoId) || {}
         const colabResuelveObj = mapaColabs.get(colabResuelveId) || {}
