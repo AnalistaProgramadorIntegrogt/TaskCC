@@ -964,13 +964,28 @@ const abrirModalNuevaTarea = () => {
 }
 
 const guardarNuevaTarea = async () => {
-  if (!formNuevaTarea.value.nombre.trim()) return
+  const nombreLimpio = formNuevaTarea.value.nombre.trim()
+  if (!nombreLimpio) return
+
+  // Validar si ya existe una tarea con el mismo nombre en el catálogo (insensible a mayúsculas/minúsculas)
+  const tareaExistente = catalogTareas.value.find(
+    (t: any) => t.nombre && t.nombre.trim().toLowerCase() === nombreLimpio.toLowerCase()
+  )
+  if (tareaExistente) {
+    showToast(`La tarea "${nombreLimpio}" ya existe en el catálogo. Se ha seleccionado automáticamente.`, 'info')
+    if (!tareasIndividualesIds.value.includes(tareaExistente.id)) {
+      tareasIndividualesIds.value.push(tareaExistente.id)
+    }
+    modalNuevaTareaOpen.value = false
+    return
+  }
+
   guardandoNuevaTarea.value = true
   try {
     const { data: newT, error } = await supabase
       .from('tareas')
       .insert({
-        nombre: formNuevaTarea.value.nombre.trim(),
+        nombre: nombreLimpio,
         descripcion: formNuevaTarea.value.descripcion.trim(),
         activa: true
       })

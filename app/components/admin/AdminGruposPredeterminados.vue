@@ -84,6 +84,15 @@
                 <h3 class="text-lg font-bold text-base-content">{{ grupo.nombre }}</h3>
               </div>
               <div class="flex items-center gap-1">
+                <button 
+                  v-if="getTareasDelGrupo(grupo.id).length > 0"
+                  class="btn btn-ghost btn-xs text-primary gap-1 font-bold" 
+                  @click="abrirQrGrupo(grupo)" 
+                  title="Imprimir códigos QR de todas las tareas de la plantilla"
+                >
+                  <QrCode :size="14" />
+                  <span class="hidden sm:inline">QRs</span>
+                </button>
                 <button class="btn btn-ghost btn-xs text-info" @click="openGrupoModal(grupo)" title="Editar Grupo">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -110,10 +119,21 @@
                 <div 
                   v-for="tarea in getTareasDelGrupo(grupo.id)" 
                   :key="tarea.id"
-                  class="flex items-center justify-between p-2 rounded-lg bg-base-200/40 text-xs border border-base-200"
+                  class="flex items-center justify-between p-2 rounded-lg bg-base-200/40 text-xs border border-base-200 hover:border-primary/40 transition-colors"
                 >
                   <span class="font-medium text-base-content">{{ tarea.nombre }}</span>
-                  <span class="badge badge-xs badge-neutral">ID: {{ tarea.id }}</span>
+                  <div class="flex items-center gap-1.5">
+                    <button 
+                      type="button" 
+                      class="btn btn-ghost btn-xs text-primary gap-1 hover:bg-primary/10 rounded-lg"
+                      @click="abrirQrTarea(tarea)"
+                      title="Ver e imprimir Código QR de esta tarea"
+                    >
+                      <QrCode :size="13" />
+                      <span class="text-[10px] font-bold">QR</span>
+                    </button>
+                    <span class="badge badge-xs badge-neutral">#{{ tarea.id }}</span>
+                  </div>
                 </div>
                 <div v-if="getTareasDelGrupo(grupo.id).length === 0" class="text-xs italic text-base-content/40 py-2 text-center">
                   Ninguna tarea asignada a este grupo por defecto
@@ -202,11 +222,22 @@
       @descargar-plantilla="descargarPlantilla"
       @importacion-completada="onImportacionCompletada"
     />
+
+    <!-- Modal Generador / Imprimidor de Códigos QR -->
+    <ModalQrTarea
+      :is-open="isQrModalOpen"
+      :tarea="selectedQrTarea"
+      :tareas="selectedQrTareas"
+      :nombre-grupo="selectedQrGrupoNombre"
+      @cerrar="isQrModalOpen = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { QrCode } from 'lucide-vue-next'
 import ModalCargaMasivaTareas from '~/components/admin/ModalCargaMasivaTareas.vue'
+import ModalQrTarea, { type TareaQrItem } from '~/components/checklist/ModalQrTarea.vue'
 import { useExcelTareas } from '~/composables/useExcelTareas'
 
 const supabase = useSupabaseClient()
@@ -222,6 +253,35 @@ const toastType = ref<'success' | 'error'>('success')
 const gruposDefault = ref<any[]>([])
 const catalogTareas = ref<any[]>([])
 const tareasRecurrentes = ref<any[]>([])
+
+// Modal QR State
+const isQrModalOpen = ref(false)
+const selectedQrTarea = ref<TareaQrItem | null>(null)
+const selectedQrTareas = ref<TareaQrItem[]>([])
+const selectedQrGrupoNombre = ref('')
+
+const abrirQrTarea = (tarea: any) => {
+  selectedQrTarea.value = {
+    id: tarea.id,
+    nombre: tarea.nombre,
+    descripcion: tarea.descripcion
+  }
+  selectedQrTareas.value = []
+  selectedQrGrupoNombre.value = ''
+  isQrModalOpen.value = true
+}
+
+const abrirQrGrupo = (grupo: any) => {
+  const tareasDelGrupo = getTareasDelGrupo(grupo.id)
+  selectedQrTareas.value = tareasDelGrupo.map((t: any) => ({
+    id: t.id,
+    nombre: t.nombre,
+    descripcion: t.descripcion
+  }))
+  selectedQrTarea.value = null
+  selectedQrGrupoNombre.value = grupo.nombre
+  isQrModalOpen.value = true
+}
 
 // Modal Carga Masiva State
 const isCargaMasivaOpen = ref(false)
@@ -400,11 +460,22 @@ const openNuevaTareaModal = () => {
 }
 
 const guardarTareaMaestra = async () => {
-  if (!nuevaTarea.value.nombre.trim()) return
+  const nombreLimpio = nuevaTarea.value.nombre.trim()
+  if (!nombreLimpio) return
+
+  // Validar si ya existe una tarea maestra con el mismo nombre (insensible a mayúsculas/minúsculas)
+  const existe = catalogTareas.value.some(
+    (t: any) => t.nombre && t.nombre.trim().toLowerCase() === nombreLimpio.toLowerCase()
+  )
+  if (existe) {
+    showToast(`Ya existe una tarea maestra con el nombre "${nombreLimpio}".`, 'error')
+    return
+  }
+
   savingTarea.value = true
   try {
     const { error } = await supabase.from('tareas').insert({
-      nombre: nuevaTarea.value.nombre.trim(),
+      nombre: nombreLimpio,
       descripcion: nuevaTarea.value.descripcion.trim(),
       activa: true
     })
@@ -425,13 +496,16 @@ const descargarPlantilla = () => {
   showToast('Plantilla Excel descargada correctamente')
 }
 
-const onImportacionCompletada = async (res: { creadas: number; actualizadas: number; asociadasAlGrupo: number }) => {
+const onImportacionCompletada = async (res: { creadas: number; actualizadas: number; asociadasAlGrupo: number; omitidasDuplicadas?: number }) => {
   let mensaje = `Carga masiva completada: ${res.creadas} tarea(s) nueva(s) creadas`
   if (res.actualizadas > 0) {
     mensaje += `, ${res.actualizadas} actualizada(s)`
   }
   if (res.asociadasAlGrupo > 0) {
     mensaje += ` y ${res.asociadasAlGrupo} asociada(s) al grupo`
+  }
+  if (res.omitidasDuplicadas && res.omitidasDuplicadas > 0) {
+    mensaje += ` (${res.omitidasDuplicadas} duplicadas omitidas)`
   }
   showToast(mensaje)
   await fetchData()

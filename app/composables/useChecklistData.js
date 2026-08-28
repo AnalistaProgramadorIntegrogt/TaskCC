@@ -287,6 +287,159 @@ export function useChecklistData() {
     return data
   }
 
+  // 8.1 Registrar Check-in por escaneo de QR (Marca momento de entrada)
+  async function registrarCheckinQr(checklistTareaId, colaboradorId) {
+    if (!checklistTareaId) return null
+    try {
+      const payload = {
+        qr_escaneado: true,
+        qr_escaneado_at: new Date().toISOString(),
+        qr_escaneado_por: colaboradorId || null
+      }
+      const { data, error } = await supabase
+        .from('checklist_tareas')
+        .update(payload)
+        .eq('id', checklistTareaId)
+        .select()
+        .maybeSingle()
+
+      if (error) {
+        console.warn('Aviso: columnas de QR aún no creadas en BD o error en check-in:', error.message)
+      }
+      return data
+    } catch (e) {
+      console.warn('Error registrando check-in QR:', e)
+      return null
+    }
+  }
+
+  // 8.2 Marcar tarea como hecha desde Escaneo QR (incluyendo trazabilidad de escaneo presencial)
+  async function marcarComoHechaViaQr(checklistTareaId, archivo, colaboradorId, observaciones = null) {
+    const { foto_path, foto_url } = await subirFotoEvidencia(archivo, checklistTareaId)
+
+    const updatePayload = {
+      completada: true,
+      completada_at: new Date().toISOString(),
+      colaborador_resuelve_id: colaboradorId,
+      foto_path,
+      foto_url,
+      qr_escaneado: true,
+      qr_escaneado_at: new Date().toISOString(),
+      qr_escaneado_por: colaboradorId || null
+    }
+
+    if (observaciones !== undefined && observaciones !== null && typeof observaciones === 'string' && observaciones.trim() !== '') {
+      updatePayload.observaciones = observaciones.trim()
+    }
+
+    let { data, error } = await supabase
+      .from('checklist_tareas')
+      .update(updatePayload)
+      .eq('id', checklistTareaId)
+      .select(`
+        *,
+        responsable:colaboradores!colaborador_responsable_id ( id, nombre ),
+        resuelve:colaboradores!colaborador_resuelve_id ( id, nombre )
+      `)
+      .single()
+
+    // Si falla por columnas de QR aún no migradas en Supabase, reintentar con payload estándar
+    if (error && error.message && error.message.includes('qr_escaneado')) {
+      delete updatePayload.qr_escaneado
+      delete updatePayload.qr_escaneado_at
+      delete updatePayload.qr_escaneado_por
+      const retry = await supabase
+        .from('checklist_tareas')
+        .update(updatePayload)
+        .eq('id', checklistTareaId)
+        .select(`
+          *,
+          responsable:colaboradores!colaborador_responsable_id ( id, nombre ),
+          resuelve:colaboradores!colaborador_resuelve_id ( id, nombre )
+        `)
+        .single()
+      if (retry.error) throw retry.error
+      data = retry.data
+    } else if (error) {
+      throw error
+    }
+
+    return data
+  }
+
+  // 8.3 Obtener datos de tarea y su instancia en el checklist de hoy para escaneo QR
+  async function obtenerTareaParaEscaneo(tareaId, colaboradorId) {
+    // 1. Obtener la tarea maestra
+    const { data: tarea, error: errTarea } = await supabase
+      .from('tareas')
+      .select('id, nombre, descripcion, activa')
+      .eq('id', tareaId)
+      .single()
+
+    if (errTarea) throw errTarea
+
+    // Fecha de hoy (YYYY-MM-DD local)
+    const hoy = new Date()
+    const yyyy = hoy.getFullYear()
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+    const dd = String(hoy.getDate()).padStart(2, '0')
+    const fechaHoy = `${yyyy}-${mm}-${dd}`
+
+    // 2. Buscar si existe una instancia de checklist_tareas para hoy
+    let query = supabase
+      .from('checklist_tareas')
+      .select(`
+        id,
+        checklist_id,
+        tarea_id,
+        completada,
+        completada_at,
+        observaciones,
+        foto_url,
+        foto_path,
+        qr_escaneado,
+        qr_escaneado_at,
+        colaborador_responsable_id,
+        colaborador_resuelve_id,
+        checklist:checklists!checklist_id (
+          id,
+          fecha,
+          dia,
+          proyecto_id,
+          colaborador_asignado_id,
+          proyecto:proyectos ( id, nombre )
+        ),
+        responsable:colaboradores!colaborador_responsable_id ( id, nombre ),
+        resuelve:colaboradores!colaborador_resuelve_id ( id, nombre )
+      `)
+      .eq('tarea_id', tareaId)
+
+    const { data: instancias, error: errInstancias } = await query
+
+    let instanciaHoy = null
+    if (!errInstancias && instancias && instancias.length > 0) {
+      // Filtrar por fecha de hoy
+      const deHoy = instancias.filter(i => i.checklist?.fecha === fechaHoy)
+      if (deHoy.length > 0) {
+        // Priorizar la asignada al colaborador actual si existe
+        if (colaboradorId) {
+          instanciaHoy = deHoy.find(i => 
+            i.colaborador_responsable_id === colaboradorId || 
+            i.checklist?.colaborador_asignado_id === colaboradorId
+          ) || deHoy[0]
+        } else {
+          instanciaHoy = deHoy[0]
+        }
+      }
+    }
+
+    return {
+      tarea,
+      instanciaHoy,
+      fechaHoy
+    }
+  }
+
   // 9. Desmarcar tarea
   async function desmarcarTarea(checklistTareaId) {
     const { data, error } = await supabase
@@ -716,6 +869,9 @@ export function useChecklistData() {
     agregarTareaSuelta,
     quitarTarea,
     marcarComoHecha,
+    registrarCheckinQr,
+    marcarComoHechaViaQr,
+    obtenerTareaParaEscaneo,
     desmarcarTarea,
     cargarRangoProyecto,
     asignarTareasSemanal,

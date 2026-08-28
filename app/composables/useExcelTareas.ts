@@ -10,6 +10,7 @@ export interface ResultadoParseoExcel {
   tareas: FilaTareaExcel[]
   totalFilas: number
   filasIgnoradas: number
+  filasDuplicadas: number
   errores: string[]
 }
 
@@ -74,6 +75,7 @@ export function useExcelTareas() {
 
   /**
    * Lee y procesa un archivo Excel (.xlsx, .xls) o CSV subido por el usuario.
+   * Valida y filtra tareas repetidas dentro del mismo archivo.
    */
   async function leerArchivoExcel(archivo: File): Promise<ResultadoParseoExcel> {
     return new Promise((resolve, reject) => {
@@ -91,6 +93,7 @@ export function useExcelTareas() {
               tareas: [],
               totalFilas: 0,
               filasIgnoradas: 0,
+              filasDuplicadas: 0,
               errores: ['El archivo no contiene ninguna hoja de datos.']
             })
             return
@@ -105,12 +108,16 @@ export function useExcelTareas() {
           const tareas: FilaTareaExcel[] = []
           const errores: string[] = []
           let filasIgnoradas = 0
+          let filasDuplicadas = 0
+          // Mapa para registrar nombres ya vistos en el archivo: clave normalizada -> fila
+          const tareasVistasEnArchivo = new Map<string, number>()
 
           if (!jsonData || jsonData.length === 0) {
             resolve({
               tareas: [],
               totalFilas: 0,
               filasIgnoradas: 0,
+              filasDuplicadas: 0,
               errores: ['La hoja de Excel está vacía.']
             })
             return
@@ -142,7 +149,7 @@ export function useExcelTareas() {
               if (valores.length >= 2) descripcion = String(valores[1] || '').trim()
             }
 
-            // Validar si la fila tiene datos
+            // Validar si la fila está completamente vacía
             if (!titulo && !descripcion) {
               filasIgnoradas++
               continue
@@ -153,6 +160,16 @@ export function useExcelTareas() {
               continue
             }
 
+            // VALIDACIÓN: Evitar tareas duplicadas dentro del mismo archivo Excel
+            const keyNormalizada = titulo.toLowerCase()
+            if (tareasVistasEnArchivo.has(keyNormalizada)) {
+              const filaOriginal = tareasVistasEnArchivo.get(keyNormalizada)
+              filasDuplicadas++
+              errores.push(`Fila ${numeroFila}: La tarea "${titulo}" ya fue definida en la fila ${filaOriginal}. Se omitió el duplicado.`)
+              continue
+            }
+
+            tareasVistasEnArchivo.set(keyNormalizada, numeroFila)
             tareas.push({
               nombre: titulo,
               descripcion: descripcion
@@ -163,6 +180,7 @@ export function useExcelTareas() {
             tareas,
             totalFilas: jsonData.length,
             filasIgnoradas,
+            filasDuplicadas,
             errores
           })
         } catch (err: any) {
@@ -182,6 +200,7 @@ export function useExcelTareas() {
   /**
    * Inserta o actualiza masivamente las tareas en la base de datos (Supabase)
    * y opcionalmente las asocia a un grupo recurrente.
+   * Garantiza que no se creen tareas duplicadas en la BD.
    */
   async function importarTareasMasivas({
     tareas,
@@ -189,9 +208,9 @@ export function useExcelTareas() {
   }: {
     tareas: FilaTareaExcel[]
     grupoId?: number | null
-  }): Promise<{ creadas: number; actualizadas: number; asociadasAlGrupo: number }> {
+  }): Promise<{ creadas: number; actualizadas: number; asociadasAlGrupo: number; omitidasDuplicadas: number }> {
     if (!tareas || tareas.length === 0) {
-      return { creadas: 0, actualizadas: 0, asociadasAlGrupo: 0 }
+      return { creadas: 0, actualizadas: 0, asociadasAlGrupo: 0, omitidasDuplicadas: 0 }
     }
 
     procesando.value = true
@@ -213,26 +232,42 @@ export function useExcelTareas() {
       const tareasInsertar: { nombre: string; descripcion: string; activa: boolean }[] = []
       const tareasActualizar: { id: number; nombre: string; descripcion: string }[] = []
       const idsTareasFinales: number[] = []
+      const nombresNuevosProcesados = new Set<string>()
+      let contadorOmitidas = 0
 
-      // Separar entre nuevas y actualizaciones
+      // Separar entre nuevas y actualizaciones garantizando cero duplicados
       for (const item of tareas) {
-        const key = item.nombre.trim().toLowerCase()
+        const nombreLimpio = item.nombre.trim()
+        const key = nombreLimpio.toLowerCase()
+
+        if (!key) continue
+
         const existente = mapaExistentes.get(key)
 
         if (existente) {
-          idsTareasFinales.push(existente.id)
-          // Si la descripción cambió, la actualizamos
-          if (item.descripcion && item.descripcion !== existente.descripcion) {
-            tareasActualizar.push({
-              id: existente.id,
-              nombre: item.nombre.trim(),
-              descripcion: item.descripcion.trim()
-            })
+          if (!idsTareasFinales.includes(existente.id)) {
+            idsTareasFinales.push(existente.id)
+          }
+          // Si la descripción cambió y viene especificada, la actualizamos
+          if (item.descripcion && item.descripcion.trim() !== (existente.descripcion || '').trim()) {
+            if (!tareasActualizar.some(t => t.id === existente.id)) {
+              tareasActualizar.push({
+                id: existente.id,
+                nombre: existente.nombre,
+                descripcion: item.descripcion.trim()
+              })
+            }
           }
         } else {
+          // Si es nueva tarea: verificar que no haya sido añadida en este mismo lote
+          if (nombresNuevosProcesados.has(key)) {
+            contadorOmitidas++
+            continue
+          }
+          nombresNuevosProcesados.add(key)
           tareasInsertar.push({
-            nombre: item.nombre.trim(),
-            descripcion: item.descripcion.trim(),
+            nombre: nombreLimpio,
+            descripcion: item.descripcion ? item.descripcion.trim() : '',
             activa: true
           })
         }
@@ -246,12 +281,16 @@ export function useExcelTareas() {
         const { data: nuevas, error: errInsertar } = await supabase
           .from('tareas')
           .insert(tareasInsertar)
-          .select('id')
+          .select('id, nombre')
 
         if (errInsertar) throw errInsertar
         if (nuevas) {
           contadorCreadas = nuevas.length
-          nuevas.forEach(n => idsTareasFinales.push(n.id))
+          nuevas.forEach(n => {
+            if (!idsTareasFinales.includes(n.id)) {
+              idsTareasFinales.push(n.id)
+            }
+          })
         }
       }
 
@@ -278,7 +317,10 @@ export function useExcelTareas() {
         const tareasYaEnGrupo = new Set((relExistentes || []).map(r => r.tarea_id))
         let maxOrden = (relExistentes || []).reduce((max, r) => Math.max(max, r.orden || 0), 0)
 
-        const nuevasRelaciones = idsTareasFinales
+        // Deduplicar idsTareasFinales
+        const uniqueIds = Array.from(new Set(idsTareasFinales))
+
+        const nuevasRelaciones = uniqueIds
           .filter(tId => !tareasYaEnGrupo.has(tId))
           .map(tId => {
             maxOrden++
@@ -302,7 +344,8 @@ export function useExcelTareas() {
       return {
         creadas: contadorCreadas,
         actualizadas: contadorActualizadas,
-        asociadasAlGrupo: contadorAsociadas
+        asociadasAlGrupo: contadorAsociadas,
+        omitidasDuplicadas: contadorOmitidas
       }
     } catch (e: any) {
       console.error('Error al importar tareas masivas:', e)

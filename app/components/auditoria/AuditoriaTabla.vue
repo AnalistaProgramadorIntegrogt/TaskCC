@@ -88,6 +88,10 @@
                 <span class="badge badge-primary badge-outline badge-xs font-bold">
                   {{ item.proyecto_nombre }}
                 </span>
+                <span v-if="item.qr_escaneado" class="badge badge-success text-white badge-xs font-bold gap-1" title="Completada presencialmente vía escaneo de Código QR">
+                  <QrCode :size="10" />
+                  <span>QR Verificado</span>
+                </span>
               </div>
               <!-- Observación rápida si existe -->
               <p v-if="item.observaciones" class="text-[11px] text-base-content/70 italic mt-1 line-clamp-1">
@@ -223,7 +227,8 @@ import {
   Inbox,
   Camera,
   Clock,
-  Award
+  Award,
+  QrCode
 } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'

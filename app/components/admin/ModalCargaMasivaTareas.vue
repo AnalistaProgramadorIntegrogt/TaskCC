@@ -111,6 +111,9 @@
                   <span class="badge badge-success badge-xs font-bold text-white">
                     {{ resultadoParseo.tareas.length }} tareas válidas
                   </span>
+                  <span v-if="resultadoParseo.filasDuplicadas > 0" class="badge badge-warning badge-xs font-bold text-warning-content">
+                    {{ resultadoParseo.filasDuplicadas }} duplicadas omitidas
+                  </span>
                   <span v-if="resultadoParseo.filasIgnoradas > 0" class="badge badge-ghost badge-xs">
                     {{ resultadoParseo.filasIgnoradas }} filas vacías ignoradas
                   </span>
@@ -120,7 +123,7 @@
 
             <button 
               type="button" 
-              class="btn btn-ghost btn-xs font-bold text-xs text-error hover:bg-error/10 gap-1 rounded-xl"
+              class="btn btn-ghost btn-xs font-bold text-xs text-error hover:bg-error/10 gap-1 rounded-xl" 
               @click="limpiarArchivo"
               :disabled="procesando"
             >
@@ -153,10 +156,10 @@
           <div v-if="resultadoParseo.errores.length > 0" class="alert alert-warning text-xs p-3 rounded-2xl shadow-xs">
             <AlertCircle :size="18" />
             <div>
-              <span class="font-bold">Aviso en algunas filas:</span>
+              <span class="font-bold">Avisos y validaciones del archivo:</span>
               <ul class="list-disc list-inside mt-1 space-y-0.5">
-                <li v-for="(err, idx) in resultadoParseo.errores.slice(0, 3)" :key="idx">{{ err }}</li>
-                <li v-if="resultadoParseo.errores.length > 3">...y {{ resultadoParseo.errores.length - 3 }} advertencias más.</li>
+                <li v-for="(err, idx) in resultadoParseo.errores.slice(0, 4)" :key="idx">{{ err }}</li>
+                <li v-if="resultadoParseo.errores.length > 4">...y {{ resultadoParseo.errores.length - 4 }} avisos más.</li>
               </ul>
             </div>
           </div>
@@ -204,7 +207,7 @@
 
         <div class="flex items-center gap-2">
           <button 
-            v-if="archivoCargado"
+            v-if="archivoCargado" 
             type="button" 
             class="btn btn-primary btn-sm sm:btn-md font-black rounded-2xl gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
             :disabled="procesando || resultadoParseo.tareas.length === 0"
@@ -225,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import {
   X,
   FileSpreadsheet,
@@ -247,7 +250,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'descargar-plantilla'): void
-  (e: 'importacion-completada', resultado: { creadas: number; actualizadas: number; asociadasAlGrupo: number }): void
+  (e: 'importacion-completada', resultado: { creadas: number; actualizadas: number; asociadasAlGrupo: number; omitidasDuplicadas: number }): void
 }>()
 
 const { leerArchivoExcel, importarTareasMasivas, procesando } = useExcelTareas()
@@ -262,6 +265,7 @@ const resultadoParseo = ref<ResultadoParseoExcel>({
   tareas: [],
   totalFilas: 0,
   filasIgnoradas: 0,
+  filasDuplicadas: 0,
   errores: []
 })
 
@@ -285,6 +289,7 @@ function limpiarArchivo() {
     tareas: [],
     totalFilas: 0,
     filasIgnoradas: 0,
+    filasDuplicadas: 0,
     errores: []
   }
   if (fileInputRef.value) {

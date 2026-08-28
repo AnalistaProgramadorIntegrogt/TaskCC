@@ -415,6 +415,11 @@
                     <span v-if="tareaSeleccionada.proyectoNombre" class="badge badge-ghost font-bold text-xs py-2">
                       🏢 {{ tareaSeleccionada.proyectoNombre }}
                     </span>
+
+                    <span v-if="tareaSeleccionada.qr_escaneado" class="badge badge-success text-white font-bold text-xs py-2 gap-1" title="Presencia física verificada vía Código QR">
+                      <QrCode :size="12" />
+                      <span>QR Verificado</span>
+                    </span>
                   </div>
 
                   <h3 class="text-lg font-black text-base-content leading-tight">
@@ -613,10 +618,11 @@ import {
   AlertTriangle, 
   Camera, 
   Eye, 
-  ListTodo,
-  LayoutDashboard,
-  ChevronRight,
-  RotateCcw
+  ListTodo, 
+  LayoutDashboard, 
+  ChevronRight, 
+  RotateCcw,
+  QrCode
 } from 'lucide-vue-next'
 import type { Incidencia } from '~/composables/useIncidencias'
 

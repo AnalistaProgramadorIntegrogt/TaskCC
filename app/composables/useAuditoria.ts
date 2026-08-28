@@ -23,6 +23,8 @@ export interface TareaAuditada {
   foto_url: string | null
   foto_path: string | null
   observaciones: string | null
+  qr_escaneado?: boolean
+  qr_escaneado_at?: string | null
   auditada: boolean
   auditoria_puntaje: number | null
   auditoria_comentario: string | null
@@ -113,6 +115,8 @@ export function useAuditoria() {
           foto_url,
           foto_path,
           observaciones,
+          qr_escaneado,
+          qr_escaneado_at,
           auditada,
           auditoria_puntaje,
           auditoria_comentario,
@@ -173,6 +177,8 @@ export function useAuditoria() {
           foto_url: t.foto_url,
           foto_path: t.foto_path,
           observaciones: t.observaciones,
+          qr_escaneado: Boolean(t.qr_escaneado),
+          qr_escaneado_at: t.qr_escaneado_at,
           auditada: Boolean(t.auditada),
           auditoria_puntaje: t.auditoria_puntaje,
           auditoria_comentario: t.auditoria_comentario,

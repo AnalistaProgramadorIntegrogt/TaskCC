@@ -76,6 +76,22 @@
           </div>
         </div>
 
+        <!-- Trazabilidad de Escaneo QR -->
+        <div v-if="tarea?.qr_escaneado" class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-2xl text-emerald-950 dark:text-emerald-200">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <QrCode :size="16" />
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold text-xs flex items-center gap-1.5">
+              <span>Presencia Física Verificada mediante Código QR</span>
+              <span class="badge badge-success badge-xs text-white font-bold">Auténtico</span>
+            </div>
+            <p class="text-[11px] opacity-80 mt-0.5">
+              El colaborador escaneó el código físico en el área de trabajo para registrar su entrada y realizar la tarea.
+            </p>
+          </div>
+        </div>
+
         <!-- Evidencia Fotográfica y Descripción -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <!-- Columna 1: Imagen de Evidencia -->
@@ -270,7 +286,8 @@ import {
   MessageSquare,
   CheckCircle2,
   FileText,
-  RotateCcw
+  RotateCcw,
+  QrCode
 } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
