@@ -9,6 +9,13 @@ export default defineNuxtConfig({
     appManifest: false
   },
 
+  nitro: {
+    prerender: {
+      failOnError: false,
+      crawlLinks: true
+    }
+  },
+
   app: {
     head: {
       link: [
