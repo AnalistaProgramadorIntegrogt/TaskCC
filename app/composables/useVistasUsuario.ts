@@ -7,9 +7,7 @@ import {
   LayoutDashboard, 
   Layers, 
   BarChart3,
-  CalendarDays,
-  ListTodo,
-  FileCheck
+  CalendarDays
 } from 'lucide-vue-next'
 
 export interface VistaItem {
@@ -30,6 +28,11 @@ export const DEFAULT_VISTAS: VistaItem[] = [
   { id: 7, nombre: 'Gestión de Usuarios', ruta: '/admin/usuarios', categoria: 'Administración', descripcion: 'Administración de colaboradores y permisos' },
   { id: 8, nombre: 'Gestión de Roles', ruta: '/admin/roles', categoria: 'Administración', descripcion: 'Creación de roles y asignación de vistas' },
 ]
+
+// Variables a nivel de módulo para deduplicación y caché
+let fetchVistasPromise: Promise<VistaItem[]> | null = null
+let lastLoadedRolId: any = '__initial__'
+let lastLoadedColabId: any = '__initial__'
 
 export const useVistasUsuario = () => {
   const supabase = useSupabaseClient()
@@ -64,52 +67,80 @@ export const useVistasUsuario = () => {
     return Layers
   }
 
-  // Cargar vistas desde Supabase
-  const fetchVistas = async () => {
-    cargandoVistas.value = true
-    try {
-      // 1. Obtener catálogo completo de vistas de la base de datos
-      const { data: dbVistas, error: vErr } = await supabase
-        .from('vistas')
-        .select('*')
-        .order('id', { ascending: true })
+  // Cargar vistas desde Supabase de forma optimizada con deduplicación
+  const fetchVistas = async (force = false): Promise<VistaItem[]> => {
+    const currentRolId = colaborador.value?.rol_id
+    const currentColabId = colaborador.value?.id
 
-      const catalogo = (dbVistas && dbVistas.length > 0) ? dbVistas : DEFAULT_VISTAS
-      catalogoCompletoVistas.value = catalogo
+    // 1. Si ya hay una consulta en curso, reutilizar la misma promesa
+    if (!force && fetchVistasPromise) {
+      return fetchVistasPromise
+    }
 
-      // 2. Si el usuario es ADMIN, tiene acceso a TODO el catálogo
-      if (esAdmin.value) {
-        vistasAsignadas.value = catalogo
-        return
-      }
+    // 2. Si ya están cargadas en memoria para el mismo rol y colaborador, no volver a consultar
+    if (
+      !force && 
+      vistasAsignadas.value.length > 0 && 
+      lastLoadedRolId === currentRolId && 
+      lastLoadedColabId === currentColabId
+    ) {
+      return vistasAsignadas.value
+    }
 
-      // 3. Si tiene un rol asignado, consultar la tabla intermedia rol_vistas
-      const rolId = colaborador.value?.rol_id
-      if (rolId) {
-        const { data: rolVistas, error: rvErr } = await supabase
-          .from('rol_vistas')
-          .select('vista_id')
-          .eq('rol_id', rolId)
+    // 3. Solo activar indicador de carga si no hay datos previos para evitar parpadeos
+    if (vistasAsignadas.value.length === 0) {
+      cargandoVistas.value = true
+    }
 
-        if (!rvErr && rolVistas && rolVistas.length > 0) {
-          const assignedIds = new Set(rolVistas.map((rv: any) => rv.vista_id))
+    fetchVistasPromise = (async () => {
+      try {
+        // Consultas en paralelo para mayor velocidad
+        const [vistasRes, rolVistasRes] = await Promise.all([
+          supabase.from('vistas').select('*').order('id', { ascending: true }),
+          currentRolId && !esAdmin.value 
+            ? supabase.from('rol_vistas').select('vista_id').eq('rol_id', currentRolId)
+            : Promise.resolve({ data: null, error: null } as any)
+        ])
+
+        const dbVistas = vistasRes.data
+        const catalogo = (dbVistas && dbVistas.length > 0) ? dbVistas : DEFAULT_VISTAS
+        catalogoCompletoVistas.value = catalogo
+
+        // Si es ADMIN, tiene acceso completo
+        if (esAdmin.value) {
+          vistasAsignadas.value = catalogo
+        } else if (currentRolId && rolVistasRes.data && rolVistasRes.data.length > 0) {
+          // Si tiene asignaciones en la BD
+          const assignedIds = new Set(rolVistasRes.data.map((rv: any) => rv.vista_id))
           vistasAsignadas.value = catalogo.filter((v: any) => assignedIds.has(v.id))
         } else {
-          // Si no tiene asignaciones en la BD aún, dar por defecto las vistas básicas de operación
+          // Fallback seguro de operaciones básicas
           vistasAsignadas.value = catalogo.filter((v: any) => 
             v.ruta === '/' || v.ruta === '/admin' || v.categoria === 'Operaciones'
           )
         }
-      } else {
-        // Sin rol asignado: acceso básico
-        vistasAsignadas.value = catalogo.filter((v: any) => v.ruta === '/' || v.ruta === '/admin')
+
+        lastLoadedRolId = currentRolId
+        lastLoadedColabId = currentColabId
+        return vistasAsignadas.value
+      } catch (err) {
+        console.error('Error al cargar vistas del usuario:', err)
+        vistasAsignadas.value = DEFAULT_VISTAS.filter(v => v.categoria !== 'Administración' || esAdmin.value)
+        return vistasAsignadas.value
+      } finally {
+        cargandoVistas.value = false
+        fetchVistasPromise = null
       }
-    } catch (err) {
-      console.error('Error al cargar vistas del usuario:', err)
-      vistasAsignadas.value = DEFAULT_VISTAS.filter(v => v.categoria !== 'Administración' || esAdmin.value)
-    } finally {
-      cargandoVistas.value = false
-    }
+    })()
+
+    return fetchVistasPromise
+  }
+
+  // Inicializar carga si aún no se han cargado las vistas o si cambió el rol
+  const currentRol = colaborador.value?.rol_id
+  const currentColab = colaborador.value?.id
+  if (vistasAsignadas.value.length === 0 || lastLoadedRolId !== currentRol || lastLoadedColabId !== currentColab) {
+    fetchVistas()
   }
 
   // Agrupar vistas asignadas por categoría
@@ -157,11 +188,6 @@ export const useVistasUsuario = () => {
       return false
     })
   }
-
-  // Sincronizar automáticamente cuando cambia el colaborador
-  watch(colaborador, () => {
-    fetchVistas()
-  }, { immediate: true })
 
   return {
     vistasAsignadas,

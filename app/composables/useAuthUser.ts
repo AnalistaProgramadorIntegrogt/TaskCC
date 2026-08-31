@@ -1,5 +1,7 @@
 import { computed, watch } from 'vue'
 
+let fetchColaboradorPromise: Promise<any> | null = null
+
 export const useAuthUser = () => {
   const supabase = useSupabaseClient()
   const user = useSupabaseUser()
@@ -16,7 +18,7 @@ export const useAuthUser = () => {
     return colaborador.value.rol_id === 1 || colaborador.value.rol_id === 2
   })
 
-  const fetchColaborador = async (explicitUserId?: string) => {
+  const fetchColaborador = async (explicitUserId?: string, force = false): Promise<any> => {
     authError.value = null
     let userId = explicitUserId || user.value?.id || (user.value as any)?.sub
 
@@ -39,42 +41,65 @@ export const useAuthUser = () => {
       authError.value = 'User is null or missing ID/SUB'
       return null
     }
+
+    // Retornar promesa en vuelo si ya se está ejecutando para evitar consultas simultáneas repetidas
+    if (!force && fetchColaboradorPromise) {
+      return fetchColaboradorPromise
+    }
+
+    // Si ya tenemos los datos en memoria para este usuario y no es forzado, retornar de inmediato
+    if (!force && colaborador.value && colaborador.value.auth_id === userId) {
+      return colaborador.value
+    }
     
-    isCargando.value = true
-    try {
-      const { data, error } = await supabase
-        .from('colaboradores')
-        .select('*, roles(rol)')
-        .eq('auth_id', userId)
-        .single()
-        
-      if (!error && data) {
-        colaborador.value = data
-        return data
-      } else {
-        console.error('Error fetching colaborador:', error)
-        authError.value = error
+    // Solo mostrar cargando si no teníamos datos previos
+    if (!colaborador.value) {
+      isCargando.value = true
+    }
+
+    fetchColaboradorPromise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('colaboradores')
+          .select('*, roles(rol)')
+          .eq('auth_id', userId)
+          .single()
+          
+        if (!error && data) {
+          colaborador.value = data
+          return data
+        } else {
+          console.error('Error fetching colaborador:', error)
+          authError.value = error
+          colaborador.value = null
+          return null
+        }
+      } catch (e) {
+        console.error('Exception fetching colaborador:', e)
+        authError.value = e
         colaborador.value = null
         return null
+      } finally {
+        isCargando.value = false
+        fetchColaboradorPromise = null
       }
-    } catch (e) {
-      console.error('Exception fetching colaborador:', e)
-      authError.value = e
-      colaborador.value = null
-      return null
-    } finally {
-      isCargando.value = false
-    }
+    })()
+
+    return fetchColaboradorPromise
   }
 
-  // Si cambia el usuario de supabase, volvemos a obtener el colaborador
+  // Sincronizar usuario si cambia de sesión
   watch(user, (newUser) => {
     if (newUser) {
-      fetchColaborador()
+      const currentAuthId = colaborador.value?.auth_id
+      const newAuthId = newUser.id || (newUser as any)?.sub
+      if (!colaborador.value || currentAuthId !== newAuthId) {
+        fetchColaborador(newAuthId)
+      }
     } else {
       colaborador.value = null
     }
-  }, { immediate: true })
+  }, { immediate: false })
 
   return {
     user,
