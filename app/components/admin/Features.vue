@@ -1,224 +1,192 @@
 <template>
-  <section class="bg-base-200 py-8 md:py-16">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
-      <div class="mx-auto grid gap-3 sm:grid-cols-5">
-        
-        <!-- Card 1: Gestionar Usuarios -->
+  <section class="bg-base-200 py-6 md:py-12">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 space-y-6">
+      
+      <!-- Grilla de Tarjetas Destacadas Principales (Dinámica según Vistas Asignadas) -->
+      <div 
+        v-if="featuredCards.length > 0"
+        class="grid gap-4 md:gap-6"
+        :class="gridColsClass"
+      >
         <NuxtLink 
-          to="/admin/usuarios" 
-          class="block rounded-2xl sm:rounded-none sm:rounded-tl-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group overflow-hidden sm:col-span-3 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative"
+          v-for="card in featuredCards" 
+          :key="card.ruta"
+          :to="card.ruta" 
+          class="block rounded-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group p-6 md:p-8 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative overflow-hidden"
         >
-          <div class="flex flex-col space-y-1.5 p-6 md:p-8 relative z-20">
-            <div class="flex items-center gap-2">
-              <span class="badge badge-primary badge-sm font-semibold">Administración</span>
-            </div>
-            <div>
-              <p class="font-bold text-xl md:text-2xl mt-1 tracking-tight">Gestionar Usuarios</p>
-              <p class="text-base-content/70 mt-2 max-w-sm text-sm">Administra usuarios, roles y permisos de acceso al sistema.</p>
-            </div>
+          <div>
+            <span class="badge badge-sm font-semibold" :class="card.badgeClass">
+              {{ card.categoria }}
+            </span>
+            <p class="mt-2 text-xl md:text-2xl font-bold tracking-tight">{{ card.titulo }}</p>
+            <p class="text-base-content/70 mt-2 text-sm">{{ card.descripcion }}</p>
           </div>
-          <div class="relative h-fit pl-6 md:pl-12">
-            <div class="absolute -inset-6 [background:radial-gradient(75%_95%_at_50%_0%,transparent,var(--fallback-b1,oklch(var(--b1))))] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div class="bg-base-100 overflow-hidden rounded-tl-xl border-l border-t border-base-200 pl-2 pt-2 relative z-10 shadow-inner">
-              <img
-                src="/img/images/USERS.png"
-                class="shadow-md rounded-tl-lg"
-                alt="Gestionar Usuarios"
-                width="1207"
-                height="929"
-              />
-            </div>
-          </div>
-        </NuxtLink>
 
-        <!-- Card 2: Gestionar Proyectos -->
-        <NuxtLink 
-          to="/admin/proyectos" 
-          class="block rounded-2xl sm:rounded-none sm:rounded-tr-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group overflow-hidden sm:col-span-2 flex flex-col hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative"
-        >
-          <div class="p-6 md:p-8 pb-0">
-            <span class="badge badge-secondary badge-sm font-semibold">Proyectos & Tareas</span>
-            <p class="mt-2 text-xl md:text-2xl font-bold tracking-tight">Gestionar Proyectos</p>
-            <p class="text-base-content/70 mt-2 text-sm">Administra proyectos, tareas recurrentes, grupos predeterminados y logos.</p>
-          </div>
-          <div class="p-6 pt-4 mt-auto h-fit">
-            <div class="relative mb-2">
-              <div class="absolute -inset-6 [background:radial-gradient(50%_75%_at_75%_50%,transparent,var(--fallback-b1,oklch(var(--b1))))] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div class="aspect-76/59 overflow-hidden rounded-xl border border-base-200 relative z-10 shadow-md">
-                <img
-                  src="https://tailark.com/_next/image?url=%2Forigin-cal.png&w=3840&q=75"
-                  class="shadow object-cover w-full h-full"
-                  alt="Gestionar Proyectos"
-                  width="1207"
-                  height="929"
+          <div class="py-8 flex items-center justify-center">
+            <div class="relative group-hover:scale-105 transition-transform duration-300">
+              <div 
+                class="absolute -inset-2 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity"
+                :class="card.glowClass"
+              ></div>
+              <div 
+                class="bg-base-200/90 relative flex aspect-square size-20 items-center justify-center rounded-2xl border border-base-300/80 shadow-md transition-colors"
+                :class="card.borderHoverClass"
+              >
+                <component 
+                  :is="card.icon" 
+                  class="size-10 transition-colors"
+                  :class="card.iconClass"
                 />
               </div>
             </div>
           </div>
-        </NuxtLink>
 
-        <!-- Card 3: Gestionar Roles -->
-        <NuxtLink 
-          to="/admin/roles" 
-          class="block rounded-2xl sm:rounded-none sm:rounded-bl-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group p-6 md:p-8 sm:col-span-2 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative overflow-hidden"
-        >
-          <div>
-            <span class="badge badge-accent badge-sm font-semibold">Seguridad</span>
-            <p class="mt-2 text-xl md:text-2xl font-bold tracking-tight">Gestionar Roles</p>
-            <p class="text-base-content/70 mt-2 text-sm">Crea roles y asigna vistas y permisos para cada usuario o grupo.</p>
-          </div>
-
-          <div class="py-6 flex items-center justify-center">
-            <div class="relative group-hover:scale-105 transition-transform duration-300">
-              <div class="absolute -inset-2 bg-gradient-to-r from-accent/30 to-primary/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity"></div>
-              <div class="bg-base-200/90 relative flex aspect-square size-20 items-center justify-center rounded-2xl border border-base-300/80 shadow-md group-hover:border-accent/50 transition-colors">
-                <ShieldCheck class="size-10 text-accent group-hover:text-primary transition-colors" />
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between text-xs font-semibold text-accent group-hover:text-primary transition-colors pt-2 border-t border-base-200">
-            <span>Configurar matriz de acceso</span>
+          <div 
+            class="flex items-center justify-between text-xs font-semibold pt-2 border-t border-base-200 transition-colors"
+            :class="card.linkClass"
+          >
+            <span>{{ card.accion }}</span>
             <ArrowUpRight class="size-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
         </NuxtLink>
+      </div>
 
-        <!-- Card 4: Otras Vistas (Directorio Dinámico de Vistas Asignadas) -->
-        <div 
-          class="rounded-2xl sm:rounded-none sm:rounded-br-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group relative sm:col-span-3 flex flex-col overflow-hidden"
-        >
-          <!-- Encabezado del Directorio -->
-          <div class="p-6 md:p-8 pb-4 border-b border-base-200/80">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="badge badge-neutral badge-sm font-semibold flex items-center gap-1">
-                    <Compass class="size-3" /> Directorio
-                  </span>
-                  <span v-if="!loading" class="badge badge-primary badge-sm font-bold">
-                    {{ vistasAsignadas.length }} {{ vistasAsignadas.length === 1 ? 'vista' : 'vistas' }}
-                  </span>
-                </div>
-                <h3 class="text-xl md:text-2xl font-bold tracking-tight mt-1 flex items-center gap-2">
-                  Otras Vistas
-                </h3>
-                <p class="text-base-content/70 text-xs sm:text-sm mt-1 max-w-lg">
-                  Directorio interactivo de todas las vistas a las que tienes acceso según tu rol actual.
-                </p>
+      <!-- Card Directorio Dinámico de Vistas Asignadas -->
+      <div 
+        class="rounded-2xl border border-base-300/80 bg-base-100 text-base-content shadow-sm group relative flex flex-col overflow-hidden"
+      >
+        <!-- Encabezado del Directorio -->
+        <div class="p-6 md:p-8 pb-4 border-b border-base-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-neutral badge-sm font-semibold flex items-center gap-1">
+                  <Compass class="size-3" /> Directorio de Vistas
+                </span>
+                <span v-if="!cargandoVistas" class="badge badge-primary badge-sm font-bold">
+                  {{ vistasAsignadas.length }} {{ vistasAsignadas.length === 1 ? 'vista disponible' : 'vistas disponibles' }}
+                </span>
               </div>
-
-              <!-- Filtro de Búsqueda Rápida -->
-              <div v-if="vistasAsignadas.length > 3" class="relative min-w-[180px] sm:w-56">
-                <Search class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
-                <input 
-                  type="text" 
-                  v-model="searchQuery" 
-                  placeholder="Buscar vista..." 
-                  class="input input-bordered input-sm w-full pl-9 pr-3 text-xs rounded-lg focus:input-primary"
-                />
-              </div>
-            </div>
-
-            <!-- Filtros por Categoría (Pills) -->
-            <div v-if="categories.length > 1" class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-base-200/60">
-              <button 
-                v-for="cat in categories" 
-                :key="cat"
-                @click="selectedCategory = cat"
-                class="btn btn-xs rounded-md transition-all font-medium"
-                :class="selectedCategory === cat ? 'btn-neutral shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
-              >
-                {{ cat }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Contenido del Directorio (Vistas) -->
-          <div class="p-4 sm:p-6 flex-grow flex flex-col justify-center">
-            <!-- Estado de Carga -->
-            <div v-if="loading" class="flex flex-col items-center justify-center py-12 text-base-content/60 gap-3">
-              <span class="loading loading-spinner loading-md text-primary"></span>
-              <p class="text-xs font-medium">Cargando directorio de vistas...</p>
-            </div>
-
-            <!-- Estado Vacío -->
-            <div v-else-if="filteredVistas.length === 0" class="text-center py-10 px-4 text-base-content/60">
-              <div class="inline-flex p-3 rounded-full bg-base-200 mb-2">
-                <Compass class="size-6 opacity-50" />
-              </div>
-              <p class="font-semibold text-sm">No se encontraron vistas</p>
-              <p class="text-xs text-base-content/50 mt-1">
-                {{ searchQuery ? 'No hay vistas que coincidan con la búsqueda.' : 'No hay vistas asignadas a tu rol.' }}
+              <h3 class="text-xl md:text-2xl font-bold tracking-tight mt-1 flex items-center gap-2">
+                Módulos y Herramientas Accesibles
+              </h3>
+              <p class="text-base-content/70 text-xs sm:text-sm mt-1 max-w-xl">
+                Directorio completo de todas las secciones a las que tienes acceso según tu rol actual: <strong class="text-primary uppercase">{{ rolActualNombre }}</strong>.
               </p>
             </div>
 
-            <!-- Grilla / Lista de Vistas Accesibles -->
-            <div 
-              v-else 
-              class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[360px] overflow-y-auto pr-1"
-            >
-              <NuxtLink 
-                v-for="vista in filteredVistas" 
-                :key="vista.id || vista.ruta"
-                :to="vista.ruta"
-                class="flex items-start gap-3 p-3 rounded-xl border border-base-200/80 bg-base-200/30 hover:bg-base-100 hover:border-primary/40 hover:shadow-md transition-all duration-200 group/item cursor-pointer relative overflow-hidden"
-              >
-                <!-- Icono de la Vista -->
-                <div 
-                  class="size-9 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs group-hover/item:scale-105"
-                  :class="getCategoryIconBgClass(vista.categoria)"
-                >
-                  <component :is="getVistaIcon(vista.ruta, vista.nombre)" class="size-4.5" />
-                </div>
-
-                <!-- Info de la Vista -->
-                <div class="flex-grow min-w-0">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="font-bold text-xs sm:text-sm text-base-content truncate group-hover/item:text-primary transition-colors">
-                      {{ vista.nombre }}
-                    </span>
-                    <ArrowUpRight class="size-3.5 shrink-0 opacity-40 group-hover/item:opacity-100 group-hover/item:text-primary group-hover/item:translate-x-0.5 group-hover/item:-translate-y-0.5 transition-all" />
-                  </div>
-
-                  <p class="text-[11px] text-base-content/70 line-clamp-2 mt-0.5 leading-snug">
-                    {{ vista.descripcion || 'Acceso directo a esta sección' }}
-                  </p>
-
-                  <div class="mt-1.5 flex items-center gap-1.5">
-                    <span 
-                      class="badge badge-xs font-medium"
-                      :class="getCategoryBadgeClass(vista.categoria)"
-                    >
-                      {{ vista.categoria || 'General' }}
-                    </span>
-                    <span class="text-[10px] text-base-content/40 font-mono truncate">
-                      {{ vista.ruta }}
-                    </span>
-                  </div>
-                </div>
-              </NuxtLink>
+            <!-- Filtro de Búsqueda Rápida -->
+            <div v-if="vistasAsignadas.length > 2" class="relative min-w-[180px] sm:w-64">
+              <Search class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Buscar vista o módulo..." 
+                class="input input-bordered input-sm w-full pl-9 pr-3 text-xs rounded-lg focus:input-primary"
+              />
             </div>
           </div>
 
-          <!-- Pie del Card -->
-          <div class="px-6 py-3 bg-base-200/40 border-t border-base-200 text-xs text-base-content/60 flex items-center justify-between">
-            <span class="flex items-center gap-1.5 text-[11px]">
-              <Sparkles class="size-3 text-primary" />
-              <span>Haz clic en cualquier vista para ingresar directamente</span>
-            </span>
-            <span class="text-[11px] font-mono opacity-60">
-              Rol: {{ rolActualNombre }}
-            </span>
+          <!-- Filtros por Categoría (Pills) -->
+          <div v-if="categories.length > 1" class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-base-200/60">
+            <button 
+              v-for="cat in categories" 
+              :key="cat"
+              @click="selectedCategory = cat"
+              class="btn btn-xs rounded-md transition-all font-medium"
+              :class="selectedCategory === cat ? 'btn-neutral shadow-xs' : 'btn-ghost text-base-content/70 hover:bg-base-200'"
+            >
+              {{ cat }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenido del Directorio (Vistas) -->
+        <div class="p-4 sm:p-6 flex-grow flex flex-col justify-center">
+          <!-- Estado de Carga -->
+          <div v-if="cargandoVistas" class="flex flex-col items-center justify-center py-12 text-base-content/60 gap-3">
+            <span class="loading loading-spinner loading-md text-primary"></span>
+            <p class="text-xs font-medium">Cargando directorio de vistas de tu rol...</p>
           </div>
 
+          <!-- Estado Vacío -->
+          <div v-else-if="filteredVistas.length === 0" class="text-center py-10 px-4 text-base-content/60">
+            <div class="inline-flex p-3 rounded-full bg-base-200 mb-2">
+              <Compass class="size-6 opacity-50" />
+            </div>
+            <p class="font-semibold text-sm">No se encontraron vistas</p>
+            <p class="text-xs text-base-content/50 mt-1">
+              {{ searchQuery ? 'No hay vistas que coincidan con la búsqueda.' : 'No tienes vistas asignadas para tu rol actual.' }}
+            </p>
+          </div>
+
+          <!-- Grilla / Lista de Vistas Accesibles -->
+          <div 
+            v-else 
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1"
+          >
+            <NuxtLink 
+              v-for="vista in filteredVistas" 
+              :key="vista.id || vista.ruta"
+              :to="vista.ruta"
+              class="flex items-start gap-3 p-3 rounded-xl border border-base-200/80 bg-base-200/30 hover:bg-base-100 hover:border-primary/40 hover:shadow-md transition-all duration-200 group/item cursor-pointer relative overflow-hidden"
+            >
+              <!-- Icono de la Vista -->
+              <div 
+                class="size-9 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs group-hover/item:scale-105"
+                :class="getCategoryIconBgClass(vista.categoria)"
+              >
+                <component :is="getVistaIcon(vista.ruta, vista.nombre)" class="size-4.5" />
+              </div>
+
+              <!-- Info de la Vista -->
+              <div class="flex-grow min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-bold text-xs sm:text-sm text-base-content truncate group-hover/item:text-primary transition-colors">
+                    {{ vista.nombre }}
+                  </span>
+                  <ArrowUpRight class="size-3.5 shrink-0 opacity-40 group-hover/item:opacity-100 group-hover/item:text-primary group-hover/item:translate-x-0.5 group-hover/item:-translate-y-0.5 transition-all" />
+                </div>
+
+                <p class="text-[11px] text-base-content/70 line-clamp-2 mt-0.5 leading-snug">
+                  {{ vista.descripcion || 'Acceso directo a esta sección' }}
+                </p>
+
+                <div class="mt-1.5 flex items-center gap-1.5">
+                  <span 
+                    class="badge badge-xs font-medium"
+                    :class="getCategoryBadgeClass(vista.categoria)"
+                  >
+                    {{ vista.categoria || 'General' }}
+                  </span>
+                  <span class="text-[10px] text-base-content/40 font-mono truncate">
+                    {{ vista.ruta }}
+                  </span>
+                </div>
+              </div>
+            </NuxtLink>
+          </div>
         </div>
-        
+
+        <!-- Pie del Card -->
+        <div class="px-6 py-3.5 bg-base-200/40 border-t border-base-200 text-xs text-base-content/60 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span class="flex items-center gap-1.5 text-[11px]">
+            <Sparkles class="size-3 text-primary shrink-0" />
+            <span>Haz clic en cualquier vista para ingresar directamente</span>
+          </span>
+          <span class="text-[11px] font-mono opacity-80">
+            Rol de Acceso: <strong class="text-base-content uppercase">{{ rolActualNombre }}</strong>
+          </span>
+        </div>
+
       </div>
+      
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { 
   Users, 
   ShieldCheck, 
@@ -230,91 +198,122 @@ import {
   Search, 
   ArrowUpRight, 
   Sparkles,
-  BarChart3
+  BarChart3,
+  CalendarDays
 } from 'lucide-vue-next'
+import { useVistasUsuario } from '~/composables/useVistasUsuario'
 
-const supabase = useSupabaseClient()
-const { colaborador } = useAuthUser()
+const { 
+  vistasAsignadas, 
+  cargandoVistas, 
+  rolActualNombre, 
+  tieneAcceso, 
+  getVistaIcon 
+} = useVistasUsuario()
 
-const loading = ref(true)
-const vistasAsignadas = ref<any[]>([])
 const searchQuery = ref('')
 const selectedCategory = ref('TODAS')
 
-// Catálogo por defecto de Vistas (fallback)
-const DEFAULT_VISTAS = [
-  { id: 1, nombre: 'Inicio / Dashboard', ruta: '/admin', categoria: 'General', descripcion: 'Vista principal con accesos y estado' },
-  { id: 2, nombre: 'Checklists Diarios', ruta: '/checklists', categoria: 'Operaciones', descripcion: 'Formulario y seguimiento de checklists diarios' },
-  { id: 3, nombre: 'Proyectos', ruta: '/proyectos', categoria: 'Operaciones', descripcion: 'Listado e información detallada de proyectos' },
-  { id: 4, nombre: 'Auditoría de Tareas', ruta: '/admin/auditoria', categoria: 'Operaciones', descripcion: 'Auditoría, revisión y calificación de tareas completadas' },
-  { id: 5, nombre: 'Reportería y Métricas', ruta: '/admin/reportes', categoria: 'Operaciones', descripcion: 'Seguimiento, asignaciones y cumplimiento de checklists' },
-  { id: 6, nombre: 'Gestión de Usuarios', ruta: '/admin/usuarios', categoria: 'Administración', descripcion: 'Administración de colaboradores y permisos' },
-  { id: 7, nombre: 'Gestión de Proyectos', ruta: '/admin/proyectos', categoria: 'Administración', descripcion: 'Configuración de proyectos y tareas' },
-  { id: 8, nombre: 'Gestión de Roles', ruta: '/admin/roles', categoria: 'Administración', descripcion: 'Creación de roles y asignación de vistas' },
+// Catálogo de configuraciones para tarjetas destacadas superiores
+const ALL_FEATURED_CONFIGS = [
+  {
+    ruta: '/admin/usuarios',
+    titulo: 'Gestionar Usuarios',
+    categoria: 'Administración',
+    descripcion: 'Administra usuarios, roles y permisos de acceso al sistema.',
+    accion: 'Administrar usuarios y permisos',
+    icon: Users,
+    badgeClass: 'badge-primary',
+    glowClass: 'bg-gradient-to-r from-primary/30 to-secondary/30',
+    borderHoverClass: 'group-hover:border-primary/50',
+    iconClass: 'text-primary group-hover:text-secondary',
+    linkClass: 'text-primary group-hover:text-secondary',
+  },
+  {
+    ruta: '/admin/proyectos',
+    titulo: 'Gestionar Proyectos',
+    categoria: 'Proyectos & Tareas',
+    descripcion: 'Administra proyectos, tareas recurrentes, grupos predeterminados y logos.',
+    accion: 'Configurar proyectos y tareas',
+    icon: FolderKanban,
+    badgeClass: 'badge-secondary',
+    glowClass: 'bg-gradient-to-r from-secondary/30 to-accent/30',
+    borderHoverClass: 'group-hover:border-secondary/50',
+    iconClass: 'text-secondary group-hover:text-primary',
+    linkClass: 'text-secondary group-hover:text-primary',
+  },
+  {
+    ruta: '/admin/roles',
+    titulo: 'Gestionar Roles',
+    categoria: 'Seguridad',
+    descripcion: 'Crea roles y asigna vistas y permisos para cada usuario o grupo.',
+    accion: 'Configurar matriz de acceso',
+    icon: ShieldCheck,
+    badgeClass: 'badge-accent',
+    glowClass: 'bg-gradient-to-r from-accent/30 to-primary/30',
+    borderHoverClass: 'group-hover:border-accent/50',
+    iconClass: 'text-accent group-hover:text-primary',
+    linkClass: 'text-accent group-hover:text-primary',
+  },
+  {
+    ruta: '/admin/auditoria',
+    titulo: 'Auditoría de Tareas',
+    categoria: 'Calidad & Operaciones',
+    descripcion: 'Auditoría, revisión y calificación de tareas y checklists completados.',
+    accion: 'Auditar tareas completadas',
+    icon: ShieldCheck,
+    badgeClass: 'badge-accent',
+    glowClass: 'bg-gradient-to-r from-accent/30 to-info/30',
+    borderHoverClass: 'group-hover:border-accent/50',
+    iconClass: 'text-accent group-hover:text-info',
+    linkClass: 'text-accent group-hover:text-info',
+  },
+  {
+    ruta: '/admin/reportes',
+    titulo: 'Reportería y Métricas',
+    categoria: 'Métricas & Cumplimiento',
+    descripcion: 'Seguimiento de cumplimiento, exportación a Excel e indicadores de rendimiento.',
+    accion: 'Ver reportes y estadísticas',
+    icon: BarChart3,
+    badgeClass: 'badge-info',
+    glowClass: 'bg-gradient-to-r from-info/30 to-primary/30',
+    borderHoverClass: 'group-hover:border-info/50',
+    iconClass: 'text-info group-hover:text-primary',
+    linkClass: 'text-info group-hover:text-primary',
+  },
+  {
+    ruta: '/',
+    titulo: 'Mis Tareas y Calendario',
+    categoria: 'Operaciones Diarias',
+    descripcion: 'Calendario personal interactivo, control de tareas e incidencias en tiempo real.',
+    accion: 'Ver mi calendario diario',
+    icon: CalendarDays,
+    badgeClass: 'badge-success',
+    glowClass: 'bg-gradient-to-r from-success/30 to-primary/30',
+    borderHoverClass: 'group-hover:border-success/50',
+    iconClass: 'text-success group-hover:text-primary',
+    linkClass: 'text-success group-hover:text-primary',
+  },
 ]
 
-const rolActualNombre = computed(() => {
-  if (colaborador.value?.roles?.rol) return colaborador.value.roles.rol
-  if (Array.isArray(colaborador.value?.roles) && colaborador.value.roles.length > 0) {
-    return colaborador.value.roles[0].rol
-  }
-  if (colaborador.value?.rol_id === 2) return 'ADMIN'
-  return 'Usuario'
+// Filtrar las tarjetas destacadas que el usuario tiene permitidas
+const featuredCards = computed(() => {
+  // Filtrar las tarjetas a las que el usuario tiene acceso
+  const accessible = ALL_FEATURED_CONFIGS.filter(c => tieneAcceso(c.ruta))
+  
+  // Limitar a máximo 3 tarjetas destacadas para mantener el equilibrio visual
+  return accessible.slice(0, 3)
 })
 
-const fetchVistas = async () => {
-  loading.value = true
-  try {
-    // 1. Obtener todas las vistas del catálogo
-    const { data: allVistas, error: vErr } = await supabase
-      .from('vistas')
-      .select('*')
-      .order('id', { ascending: true })
-
-    const baseVistas = (allVistas && allVistas.length > 0) ? allVistas : DEFAULT_VISTAS
-
-    // Verificar si es ADMIN (rol_id === 2 o rol === 'ADMIN')
-    const isUserAdmin = 
-      colaborador.value?.roles?.rol === 'ADMIN' || 
-      (Array.isArray(colaborador.value?.roles) && colaborador.value.roles.some((r: any) => r.rol === 'ADMIN')) ||
-      colaborador.value?.rol_id === 2
-
-    if (isUserAdmin) {
-      // Si es admin, tiene acceso a todas las vistas registradas
-      vistasAsignadas.value = baseVistas
-    } else if (colaborador.value?.rol_id) {
-      // Si tiene rol asignado, consultar la tabla de relación rol_vistas
-      const { data: rolVistas, error: rvErr } = await supabase
-        .from('rol_vistas')
-        .select('vista_id')
-        .eq('rol_id', colaborador.value.rol_id)
-
-      if (rolVistas && rolVistas.length > 0) {
-        const assignedIds = rolVistas.map((rv: any) => rv.vista_id)
-        vistasAsignadas.value = baseVistas.filter((v: any) => assignedIds.includes(v.id))
-      } else {
-        vistasAsignadas.value = baseVistas
-      }
-    } else {
-      vistasAsignadas.value = baseVistas
-    }
-  } catch (e) {
-    console.error('Error fetching vistas for dashboard:', e)
-    vistasAsignadas.value = DEFAULT_VISTAS
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchVistas()
+// Clase dinámica para columnas según la cantidad de tarjetas destacadas
+const gridColsClass = computed(() => {
+  const count = featuredCards.value.length
+  if (count === 1) return 'grid-cols-1'
+  if (count === 2) return 'grid-cols-1 md:grid-cols-2'
+  return 'grid-cols-1 md:grid-cols-3'
 })
 
-watch(colaborador, () => {
-  fetchVistas()
-})
-
-// Categorías disponibles
+// Categorías disponibles según las vistas asignadas
 const categories = computed(() => {
   const cats = new Set<string>()
   vistasAsignadas.value.forEach(v => {
@@ -344,26 +343,14 @@ const filteredVistas = computed(() => {
   return list
 })
 
-// Helpers visuales
-const getVistaIcon = (ruta: string, nombre: string) => {
-  const r = (ruta || '').toLowerCase()
-  const n = (nombre || '').toLowerCase()
-  if (r.includes('auditoria') || n.includes('auditoria')) return ShieldCheck
-  if (r.includes('reporte') || n.includes('reporte') || r.includes('metricas') || n.includes('metrica')) return BarChart3
-  if (r.includes('usuario') || n.includes('usuario')) return Users
-  if (r.includes('rol') || n.includes('rol')) return ShieldCheck
-  if (r.includes('checklist') || n.includes('checklist')) return CheckSquare
-  if (r.includes('proyecto') || n.includes('proyecto')) return FolderKanban
-  if (r === '/' || r === '/admin' || r.includes('dashboard') || n.includes('dashboard') || n.includes('inicio')) return LayoutDashboard
-  return Layers
-}
-
-const getCategoryBadgeClass = (categoria: string) => {
+// Clases visuales de categorías
+const getCategoryBadgeClass = (categoria?: string) => {
   switch ((categoria || '').toLowerCase()) {
     case 'administración':
     case 'administracion':
       return 'badge-primary badge-outline'
     case 'operaciones':
+    case 'calidad & operaciones':
       return 'badge-success badge-outline'
     case 'general':
       return 'badge-info badge-outline'
@@ -372,12 +359,13 @@ const getCategoryBadgeClass = (categoria: string) => {
   }
 }
 
-const getCategoryIconBgClass = (categoria: string) => {
+const getCategoryIconBgClass = (categoria?: string) => {
   switch ((categoria || '').toLowerCase()) {
     case 'administración':
     case 'administracion':
       return 'bg-primary/10 text-primary border-primary/20'
     case 'operaciones':
+    case 'calidad & operaciones':
       return 'bg-success/10 text-success border-success/20'
     case 'general':
       return 'bg-info/10 text-info border-info/20'

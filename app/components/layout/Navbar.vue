@@ -24,13 +24,14 @@
             <span>{{ userInicial }}</span>
           </div>
         </label>
-        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 text-base-content rounded-box w-56 border border-base-200">
-          <li class="menu-title px-4 py-2 border-b border-base-200">
+        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 text-base-content rounded-box w-60 border border-base-200">
+          <li class="menu-title px-4 py-2 border-b border-base-200 flex flex-col items-start gap-1">
             <span class="font-extrabold text-sm text-base-content">{{ colaborador?.nombre || 'Usuario' }}</span>
-            <span class="text-[11px] text-base-content/60 lowercase">{{ user?.email }}</span>
+            <span class="text-[11px] text-base-content/60 lowercase truncate w-full">{{ user?.email }}</span>
+            <span class="badge badge-primary badge-xs uppercase font-bold mt-1">{{ rolActualNombre }}</span>
           </li>
-          <li class="mt-1"><NuxtLink to="/">Mi Calendario</NuxtLink></li>
-          <li v-if="esAdmin"><NuxtLink to="/admin">Panel de Administración</NuxtLink></li>
+          <li class="mt-1"><NuxtLink to="/">Mis Tareas y Calendario</NuxtLink></li>
+          <li><NuxtLink to="/admin">Panel y Directorio de Vistas</NuxtLink></li>
           <div class="divider my-1"></div>
           <li><a class="text-error font-bold" @click="handleLogout">Cerrar Sesión</a></li>
         </ul>
@@ -42,10 +43,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthUser } from '~/composables/useAuthUser'
+import { useVistasUsuario } from '~/composables/useVistasUsuario'
 
 const supabase = useSupabaseClient()
 const router = useRouter()
-const { colaborador, user, esAdmin } = useAuthUser()
+const { colaborador, user } = useAuthUser()
+const { rolActualNombre } = useVistasUsuario()
 
 const userInicial = computed(() => {
   if (colaborador.value?.nombre) {
@@ -64,4 +67,3 @@ const handleLogout = async () => {
   router.push('/login')
 }
 </script>
-

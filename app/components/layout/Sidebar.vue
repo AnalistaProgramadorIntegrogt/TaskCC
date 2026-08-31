@@ -1,87 +1,75 @@
 <template>
   <div class="w-80 min-h-full bg-base-100 text-base-content border-r border-base-200 flex flex-col">
     <!-- Header del sidebar -->
-    <div class="p-4 border-b border-base-200 hidden lg:block">
-      <h2 class="text-xl font-bold">Menú Principal</h2>
+    <div class="p-4 border-b border-base-200 flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-black tracking-tight flex items-center gap-2">
+          <span>Menú Principal</span>
+        </h2>
+        <p class="text-[11px] text-base-content/60 font-medium">Vistas y herramientas de tu rol</p>
+      </div>
+      <span class="badge badge-primary badge-sm font-black uppercase text-[10px] tracking-wider">
+        {{ rolActualNombre }}
+      </span>
     </div>
 
     <!-- Links del menú -->
-    <ul class="menu p-4 w-full flex-grow text-base gap-1">
-      <li class="menu-title text-xs font-semibold text-base-content/50 uppercase tracking-wider">Operaciones</li>
-      <li>
-        <NuxtLink to="/" active-class="active" exact>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          Mis Tareas y Calendario
-        </NuxtLink>
-      </li>
+    <div class="p-4 w-full flex-grow overflow-y-auto">
+      <!-- Estado de carga -->
+      <div v-if="cargandoVistas" class="flex flex-col gap-3 py-6 items-center justify-center text-base-content/50">
+        <span class="loading loading-spinner loading-md text-primary"></span>
+        <span class="text-xs font-medium">Cargando menú de accesos...</span>
+      </div>
 
-      <!-- Sección Administración (visible para ADMIN) -->
-      <template v-if="esAdmin">
-        <li class="menu-title text-xs font-semibold text-base-content/50 uppercase tracking-wider mt-4">Administración</li>
-        <li>
-          <NuxtLink to="/admin" active-class="active" exact>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Panel General
-          </NuxtLink>
+      <!-- Menú dinámico agrupado por categorías -->
+      <ul v-else class="menu p-0 w-full text-sm gap-4">
+        <li v-for="(vistas, categoria) in vistasPorCategoria" :key="categoria" class="space-y-1">
+          <div class="menu-title text-[11px] font-black text-base-content/50 uppercase tracking-wider px-2 pb-1">
+            {{ categoria }}
+          </div>
+          
+          <ul class="space-y-1">
+            <li v-for="vista in vistas" :key="vista.id || vista.ruta">
+              <NuxtLink 
+                :to="vista.ruta" 
+                active-class="active font-bold text-primary bg-primary/10" 
+                :exact="vista.ruta === '/' || vista.ruta === '/admin'"
+                class="flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all hover:bg-base-200"
+              >
+                <component 
+                  :is="getVistaIcon(vista.ruta, vista.nombre)" 
+                  class="size-4.5 shrink-0 opacity-80" 
+                />
+                <span class="truncate">{{ vista.nombre }}</span>
+              </NuxtLink>
+            </li>
+          </ul>
         </li>
-        <li>
-          <NuxtLink to="/admin/proyectos" active-class="active">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            Proyectos
-          </NuxtLink>
+
+        <!-- Si no tiene ninguna vista asignada -->
+        <li v-if="Object.keys(vistasPorCategoria).length === 0" class="text-center py-8 text-base-content/50 text-xs">
+          No tienes vistas asignadas a tu rol actual.
         </li>
-        <li>
-          <NuxtLink to="/admin/usuarios" active-class="active">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            Usuarios
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/admin/roles" active-class="active">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            Roles
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/admin/reportes" active-class="active">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Reportería
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/admin/auditoria" active-class="active">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            Auditoría Tareas
-          </NuxtLink>
-        </li>
-      </template>
-    </ul>
+      </ul>
+    </div>
 
     <!-- Pie del sidebar con información de usuario -->
-    <div class="p-4 border-t border-base-200 text-xs text-base-content/60 flex items-center justify-between">
-      <span class="font-bold">TaskCC v1.0</span>
-      <span v-if="colaborador?.nombre" class="truncate max-w-[140px] text-right font-medium">{{ colaborador.nombre }}</span>
+    <div class="p-4 border-t border-base-200 text-xs text-base-content/70 flex items-center justify-between bg-base-200/30">
+      <div class="flex flex-col min-w-0">
+        <span class="font-bold truncate text-base-content">{{ colaborador?.nombre || 'Usuario' }}</span>
+        <span class="text-[10px] text-base-content/50 truncate">{{ colaborador?.email || '' }}</span>
+      </div>
+      <span class="badge badge-ghost badge-xs font-mono text-[10px] uppercase shrink-0">
+        {{ rolActualNombre }}
+      </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useAuthUser } from '~/composables/useAuthUser'
+import { useVistasUsuario } from '~/composables/useVistasUsuario'
 
-const { colaborador, esAdmin } = useAuthUser()
+const { colaborador } = useAuthUser()
+const { vistasPorCategoria, cargandoVistas, rolActualNombre, getVistaIcon } = useVistasUsuario()
 </script>
-
