@@ -27,6 +27,22 @@
         </div>
       </div>
 
+      <!-- Estado: Sin ID o Error de Parámetros -->
+      <div v-else-if="!tareaIdParam" class="card bg-base-100 shadow-xl border border-base-200 rounded-3xl p-6 sm:p-8 text-center space-y-4">
+        <div class="w-14 h-14 bg-warning/10 text-warning rounded-2xl flex items-center justify-center mx-auto">
+          <AlertTriangle :size="28" />
+        </div>
+        <div class="space-y-1">
+          <h3 class="font-black text-lg text-base-content">No se especificó la tarea</h3>
+          <p class="text-xs text-base-content/70 max-w-xs mx-auto">
+            Por favor escanea el código QR físico de la tarea para ingresar a su registro.
+          </p>
+        </div>
+        <NuxtLink to="/" class="btn btn-primary btn-sm rounded-xl font-bold">
+          Ir a mis tareas
+        </NuxtLink>
+      </div>
+
       <!-- Estado: Error o Tarea No Encontrada -->
       <div v-else-if="errorMsg" class="card bg-base-100 shadow-xl border border-base-200 rounded-3xl p-6 sm:p-8 text-center space-y-4">
         <div class="w-14 h-14 bg-error/10 text-error rounded-2xl flex items-center justify-center mx-auto">
@@ -274,8 +290,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   QrCode,
   ArrowLeft,
@@ -293,16 +309,17 @@ import {
 import { useChecklistData } from '~/composables/useChecklistData'
 
 const route = useRoute()
-const router = useRouter()
 const user = useSupabaseUser()
 const supabase = useSupabaseClient()
 
 const { obtenerTareaParaEscaneo, registrarCheckinQr, marcarComoHechaViaQr } = useChecklistData()
 
-const tareaId = computed(() => {
-  return (route.params.id as string) || 
-         (route.query.id as string) || 
+// Obtener ID de la tarea desde query string (?id=24 o ?tarea=24) o route params
+const tareaIdParam = computed(() => {
+  return (route.query.id as string) || 
          (route.query.tarea as string) || 
+         (route.query.task as string) || 
+         (route.params.id as string) || 
          ''
 })
 
@@ -341,10 +358,16 @@ function formatearHora(isoString?: string | null): string {
 }
 
 async function cargarDatos() {
+  const currentId = tareaIdParam.value
+  if (!currentId) {
+    cargando.value = false
+    return
+  }
+
   cargando.value = true
   errorMsg.value = ''
   try {
-    // 1. Obtener ID de colaborador actual autenticado
+    // 1. Obtener ID de colaborador actual si está autenticado
     let colaboradorId: number | null = null
     if (user.value?.email) {
       const { data: colab } = await supabase
@@ -356,7 +379,7 @@ async function cargarDatos() {
     }
 
     // 2. Obtener datos de la tarea y su checklist de hoy
-    const res = await obtenerTareaParaEscaneo(tareaId.value, colaboradorId)
+    const res = await obtenerTareaParaEscaneo(currentId, colaboradorId)
     tarea.value = res.tarea
     instanciaHoy.value = res.instanciaHoy
     fechaHoy.value = res.fechaHoy
@@ -438,5 +461,11 @@ async function confirmarCompletarTarea() {
 
 onMounted(() => {
   cargarDatos()
+})
+
+watch(tareaIdParam, (newId) => {
+  if (newId) {
+    cargarDatos()
+  }
 })
 </script>

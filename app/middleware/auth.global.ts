@@ -15,17 +15,25 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
   }
 
-  // Rutas públicas que no requieren estar logueado
-  const publicRoutes = ['/login', '/register', '/recuperar-password', '/actualizar-password']
-  
-  if (publicRoutes.includes(to.path)) {
-    // Si ya tiene sesión activa, lo redirigimos a su panel correspondiente (excepto si está cambiando contraseña)
-    if (user.value && to.path !== '/actualizar-password') {
+  // Rutas de autenticación que redirigen al panel si ya tiene sesión iniciada
+  const authRoutes = ['/login', '/register', '/recuperar-password']
+  if (authRoutes.includes(to.path)) {
+    if (user.value) {
       if (colaborador.value === null) {
         await fetchColaborador()
       }
       return navigateTo(esAdmin.value ? '/admin' : '/')
     }
+    return
+  }
+
+  // Rutas públicas permitidas sin forzar inicio de sesión (escaneo QR de tareas, actualización de contraseña)
+  const isPublicRoute = 
+    to.path === '/actualizar-password' || 
+    to.path.startsWith('/scan/') || 
+    to.path === '/scan'
+
+  if (isPublicRoute) {
     return
   }
 
@@ -48,4 +56,3 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo('/login?error=pending')
   }
 })
-

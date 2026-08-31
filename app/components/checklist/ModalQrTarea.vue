@@ -253,7 +253,7 @@ const tareaUnica = computed(() => {
 function obtenerUrlTarea(id: number | string): string {
   if (typeof window === 'undefined') return ''
   const baseUrl = window.location.origin
-  return `${baseUrl}/scan/tarea/${id}`
+  return `${baseUrl}/scan/tarea?id=${id}`
 }
 
 async function generarQr(texto: string): Promise<string> {
