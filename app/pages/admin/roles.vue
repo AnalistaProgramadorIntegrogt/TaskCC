@@ -451,10 +451,15 @@ const fetchData = async () => {
       console.warn('Tabla vistas no encontrada en Supabase, utilizando catálogo local por defecto:', vistasErr.message)
       vistasList.value = DEFAULT_VISTAS
       missingTablesWarning.value = true
-    } else if (vistasData && vistasData.length > 0) {
-      vistasList.value = vistasData
     } else {
-      vistasList.value = DEFAULT_VISTAS
+      const dbVistas = vistasData || []
+      const map = new Map<string, any>()
+      DEFAULT_VISTAS.forEach(v => map.set(v.ruta, { ...v }))
+      dbVistas.forEach(v => {
+        const d = map.get(v.ruta) || {}
+        map.set(v.ruta, { ...d, ...v })
+      })
+      vistasList.value = Array.from(map.values())
     }
 
     // 4. Cargar Relación Rol - Vistas

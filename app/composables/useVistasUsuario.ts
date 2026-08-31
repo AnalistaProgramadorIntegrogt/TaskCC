@@ -67,7 +67,7 @@ export const useVistasUsuario = () => {
     return Layers
   }
 
-  // Cargar vistas desde Supabase de forma optimizada con deduplicación
+  // Cargar vistas desde Supabase de forma optimizada con deduplicación y fusión completa
   const fetchVistas = async (force = false): Promise<VistaItem[]> => {
     const currentRolId = colaborador.value?.rol_id
     const currentColabId = colaborador.value?.id
@@ -102,11 +102,20 @@ export const useVistasUsuario = () => {
             : Promise.resolve({ data: null, error: null } as any)
         ])
 
-        const dbVistas = vistasRes.data
-        const catalogo = (dbVistas && dbVistas.length > 0) ? dbVistas : DEFAULT_VISTAS
+        const dbVistas = vistasRes.data || []
+        
+        // Fusionar vistas de Supabase con DEFAULT_VISTAS para garantizar que NINGUNA vista del sistema falte
+        const vistasMap = new Map<string, VistaItem>()
+        DEFAULT_VISTAS.forEach(v => vistasMap.set(v.ruta, { ...v }))
+        dbVistas.forEach((v: any) => {
+          const defaultItem = vistasMap.get(v.ruta) || {}
+          vistasMap.set(v.ruta, { ...defaultItem, ...v })
+        })
+
+        const catalogo = Array.from(vistasMap.values())
         catalogoCompletoVistas.value = catalogo
 
-        // Si es ADMIN, tiene acceso completo
+        // Si es ADMIN, tiene acceso completo a TODO el catálogo del sistema
         if (esAdmin.value) {
           vistasAsignadas.value = catalogo
         } else if (currentRolId && rolVistasRes.data && rolVistasRes.data.length > 0) {
